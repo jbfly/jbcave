@@ -856,18 +856,31 @@ function showHighScoreInput() {
     
     // Check if this might be a global high score
     if (CONFIG.useServerFeatures && isGlobalHighScore(score)) {
-        // Add a class to highlight the screen for important scores
-        document.getElementById('high-score-input').classList.add('global-high-score');
+        // Check if it's actually the #1 score
+        const isTopScore = globalHighScores.length === 0 || score > globalHighScores[0].score;
         
-        // Update the heading to show it's a global high score
-        const heading = document.getElementById('high-score-input').querySelector('h2');
-        heading.textContent = "New Global High Score!";
+        if (isTopScore) {
+            // Add a class to highlight the screen for the #1 score
+            document.getElementById('high-score-input').classList.add('global-high-score');
+            
+            // Update the heading to show it's the #1 global high score
+            const heading = document.getElementById('high-score-input').querySelector('h2');
+            heading.textContent = "New Global High Score!";
+        } else {
+            // Add a different class for leaderboard qualification
+            document.getElementById('high-score-input').classList.add('leaderboard-score');
+            
+            // Update the heading for leaderboard qualification
+            const heading = document.getElementById('high-score-input').querySelector('h2');
+            heading.textContent = "Leaderboard Worthy Score!";
+        }
         
-        // Make the submit button more prominent
+        // Make the submit button more prominent in both cases
         document.getElementById('submit-score-btn').classList.add('highlight-btn');
     } else {
         // Reset classes for normal scores
         document.getElementById('high-score-input').classList.remove('global-high-score');
+        document.getElementById('high-score-input').classList.remove('leaderboard-score');
         
         // Reset heading
         const heading = document.getElementById('high-score-input').querySelector('h2');

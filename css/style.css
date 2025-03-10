@@ -1325,3 +1325,46 @@ button:hover {
     background-color: #39c;
     border-radius: 3px;
 }
+#high-score-input.global-high-score h2 {
+    color: #FFD700;  /* Gold color */
+    text-shadow: 0 0 10px #FFD700, 0 0 20px #FFD700;
+    font-size: 32px;
+    animation: pulse 1.5s infinite;
+}
+
+#high-score-input.global-high-score {
+    background-color: rgba(0, 0, 0, 0.9);  /* Darker background */
+    border: 2px solid #FFD700;
+}
+
+/* NEW: Leaderboard qualification styling (for top 15 scores) */
+#high-score-input.leaderboard-score h2 {
+    color: #39c;  /* Blue color (matches game theme) */
+    text-shadow: 0 0 10px #39c, 0 0 15px #39c;
+    font-size: 28px;
+    animation: pulse 2s infinite;
+}
+
+#high-score-input.leaderboard-score {
+    background-color: rgba(0, 0, 0, 0.85);
+    border: 2px solid #39c;
+}
+
+/* Emphasize high score value for leaderboard qualification */
+#high-score-input.leaderboard-score #high-score-value {
+    font-size: 24px;
+    color: #fff;
+    font-weight: bold;
+    margin: 15px 0;
+}
+
+/* You could also add a subtitle to clarify further */
+#high-score-input.leaderboard-score h2::after {
+    content: "Enter your name to join the top players!";
+    display: block;
+    font-size: 14px;
+    color: #ccc;
+    margin-top: 8px;
+    font-weight: normal;
+    text-shadow: none;
+}
