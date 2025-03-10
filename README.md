@@ -15,9 +15,25 @@ You can play the game at: https://bonewitz.net/jbcave/
 - Time-based animation for consistent gameplay across devices
 - Mobile-friendly controls and interface
 
+## Project Structure
+
+```
+jbcave/
+├── css/              # Stylesheet files
+│   └── style.css     # Main game styles
+├── js/               # JavaScript files
+│   └── game.js       # Game logic and rendering
+├── php/              # Server-side code for high scores
+│   ├── config.template.php  # Database configuration template
+│   ├── get_scores.php       # API to fetch high scores
+│   └── submit_score.php     # API to submit new scores
+├── index.html        # Main game HTML
+└── README.md         # This file
+```
+
 ## Local Development
 
-### Quick Start
+### Setup
 
 1. Clone the repository:
    ```bash
@@ -65,22 +81,6 @@ GRANT SELECT, INSERT, UPDATE, DELETE ON jbcave_db.* TO 'jbcave_user'@'localhost'
 FLUSH PRIVILEGES;
 ```
 
-## Project Structure
-
-```
-jbcave/
-├── css/              # Stylesheet files
-│   └── style.css     # Main game styles
-├── js/               # JavaScript files
-│   └── game.js       # Game logic and rendering
-├── php/              # Server-side code for high scores
-│   ├── config.template.php  # Database configuration template
-│   ├── get_scores.php       # API to fetch high scores
-│   └── submit_score.php     # API to submit new scores
-├── index.html        # Main game HTML
-└── README.md         # This file
-```
-
 ## Configuration
 
 The game can be configured by editing the `CONFIG` object at the top of `js/game.js`:
@@ -99,29 +99,114 @@ const CONFIG = {
 
 Set `useServerFeatures` to `false` to disable database features and use only localStorage for high scores. This allows the game to be used without setting up a database.
 
-## Development and Deployment
+## Deployment Workflow
 
-### Local Development
+This section describes how to set up a GitHub-based deployment workflow for the game.
 
-1. Make changes to the code locally
-2. Test using a local web server
+### Initial Server Setup
 
-### Deployment to Production
-
-1. Commit your changes to Git:
+1. SSH into your server:
    ```bash
+   ssh jbfly@bonewitz.net
+   ```
+
+2. Back up existing files if needed:
+   ```bash
+   cd /srv/http/jbcave
+   cp -r . ../jbcave-backup-$(date +%Y%m%d)
+   ```
+
+3. Install Git on your server if not already present:
+   ```bash
+   # For Arch Linux
+   sudo pacman -S git
+   ```
+
+4. Clone the repository to your web directory:
+   ```bash
+   cd /srv/http
+   mv jbcave jbcave-old # If directory already exists
+   git clone https://github.com/jbfly/jbcave.git
+   ```
+
+5. Set proper permissions:
+   ```bash
+   sudo chown -R http:http jbcave
+   chmod 655 /srv/http/jbcave/php/*.php
+   ```
+
+6. Set up the database configuration:
+   ```bash
+   cd /srv/http/jbcave/php
+   cp config.template.php config.php
+   nano config.php # Edit with your credentials
+   ```
+
+### Setting Up SSH Keys for Password-less Deployment
+
+To avoid typing your password each time you deploy:
+
+1. Generate an SSH key on your development machine (if you don't have one):
+   ```bash
+   ssh-keygen -t ed25519 -C "your_email@example.com"
+   ```
+
+2. Copy the key to your server:
+   ```bash
+   ssh-copy-id jbfly@bonewitz.net
+   ```
+
+### Creating a Deployment Script
+
+1. Create a deployment script in your development directory:
+   ```bash
+   cd ~/git/jbcave-dev
+   nano deploy.sh
+   ```
+
+2. Add this content to the script:
+   ```bash
+   #!/bin/bash
+   echo "Deploying JBCave to production..."
+   
+   # Push local changes to GitHub
    git add .
-   git commit -m "Description of your changes"
+   git commit -m "Deployment: $(date)"
    git push
+   
+   # SSH into server and pull changes
+   ssh jbfly@bonewitz.net 'cd /srv/http/jbcave && git pull'
+   
+   echo "Deployment complete!"
    ```
 
-2. On your server:
+3. Make the script executable:
    ```bash
-   cd /path/to/www/jbcave
-   git pull
+   chmod +x deploy.sh
    ```
 
-Make sure your server has the same configuration as your local environment.
+### Using the Deployment Script
+
+Whenever you want to deploy changes to production:
+
+1. Make changes in your local repository
+2. Test the changes locally
+3. Run the deployment script:
+   ```bash
+   ./deploy.sh
+   ```
+
+This will:
+- Commit your changes to Git
+- Push them to GitHub
+- Pull the changes on your server
+
+### Troubleshooting
+
+- If the script fails to connect to your server, check your SSH configuration
+- If Git operations fail, ensure you have proper permissions
+- If database features don't work, verify your config.php settings
+- If your config.php gets overwritten, check that it's in your .gitignore file
 
 ## License
 
@@ -130,4 +215,4 @@ Make sure your server has the same configuration as your local environment.
 ## Credits
 
 - Original concept inspired by SFCave
-- Developed by John BonewitzLast updated: Sun Mar  9 17:01:20 HST 2025
+- Developed by John Bonewitz
