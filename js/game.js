@@ -783,7 +783,7 @@ function submitHighScore() {
             document.getElementById('high-score-input').style.display = 'none';
             
             // Show game over screen
-            finalScoreDisplay.textContent = `Your score: ${score}`;
+            finalScoreDisplay.textContent = `Your score: ${Math.floor(score)}`;
             document.getElementById("high-score-display").textContent = `High score: ${highScore}`;
             gameOverScreen.style.display = 'flex';
             
