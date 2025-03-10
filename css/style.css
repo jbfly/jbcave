@@ -30,13 +30,20 @@ canvas {
     background-color: #000;
 }
 
+/* Improved score display positioning and styling */
 #score-display {
     position: absolute;
     top: 10px;
-    right: 10px;
+    left: 10px; /* Move to left side instead of right */
     color: #fff;
-    font-size: 20px;
+    font-size: 24px;
+    font-weight: bold;
     z-index: 5;
+    padding: 5px 10px;
+    background-color: rgba(0, 0, 0, 0.5);
+    border-radius: 5px;
+    text-shadow: 1px 1px 2px #000;
+    transition: all 0.3s ease;
 }
 
 .overlay {
@@ -285,6 +292,23 @@ button:hover {
     .overlay {
         padding: 10px;
         justify-content: flex-start;
+    }
+    #score-display {
+        font-size: 20px;
+        top: 5px;
+        left: 5px;
+        padding: 4px 8px;
+    }
+    
+    #score-display.global-best {
+        font-size: 22px;
+    }
+    
+    #achievement-notification {
+        font-size: 16px;
+        top: 40px;
+        width: 80%;
+        max-width: 300px;
     }
 }
 
@@ -573,4 +597,90 @@ button:hover {
         padding: 4px;
         font-size: 12px;
     }
+    #score-display {
+        font-size: 18px;
+        top: 5px;
+        left: 5px;
+    }
+    
+    #achievement-notification {
+        top: 35px;
+    }
+}
+
+/* Personal best achievement styling */
+#score-display.personal-best {
+    color: #39c;
+    background-color: rgba(0, 0, 0, 0.7);
+    text-shadow: 0 0 10px #39c;
+    animation: pulse-personal 2s infinite;
+}
+
+/* Global high score achievement styling */
+#score-display.global-best {
+    color: #FFD700;
+    background-color: rgba(0, 0, 0, 0.8);
+    text-shadow: 0 0 15px #FFD700;
+    animation: pulse-global 1.5s infinite;
+    font-size: 26px;
+}
+
+/* Achievement notification styling */
+#achievement-notification {
+    position: absolute;
+    top: 50px;
+    left: 50%;
+    transform: translateX(-50%);
+    background-color: rgba(0, 0, 0, 0.8);
+    color: white;
+    padding: 10px 20px;
+    border-radius: 5px;
+    font-size: 18px;
+    font-weight: bold;
+    opacity: 0;
+    z-index: 10;
+    text-align: center;
+    pointer-events: none;
+    display: none;
+}
+
+/* Personal achievement styling */
+.personal-achievement {
+    border: 2px solid #39c;
+    color: #39c;
+    text-shadow: 0 0 8px #39c;
+}
+
+/* Global achievement styling */
+.global-achievement {
+    border: 2px solid #FFD700;
+    color: #FFD700;
+    text-shadow: 0 0 12px #FFD700;
+}
+
+/* Achievement animation */
+.show-achievement {
+    animation: show-notification 3s ease-in-out;
+}
+
+/* Pulse animation for personal best */
+@keyframes pulse-personal {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.05); }
+    100% { transform: scale(1); }
+}
+
+/* More dramatic pulse for global best */
+@keyframes pulse-global {
+    0% { transform: scale(1); box-shadow: 0 0 5px #FFD700; }
+    50% { transform: scale(1.1); box-shadow: 0 0 20px #FFD700; }
+    100% { transform: scale(1); box-shadow: 0 0 5px #FFD700; }
+}
+
+/* Notification popup animation */
+@keyframes show-notification {
+    0% { opacity: 0; transform: translate(-50%, -20px); }
+    15% { opacity: 1; transform: translate(-50%, 0); }
+    85% { opacity: 1; transform: translate(-50%, 0); }
+    100% { opacity: 0; transform: translate(-50%, -20px); }
 }

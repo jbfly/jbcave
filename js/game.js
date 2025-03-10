@@ -84,6 +84,10 @@ let highScore = 0;
 let gameState = "menu";
 let restartDelay = 0;
 let inputBlocked = false;
+let personalBestBeaten = false;
+let globalHighScoreBeaten = false;
+let personalBest = 0;
+let globalBest = 0;
 
 // Particle system for explosions
 let particles = [];
@@ -120,6 +124,21 @@ const caveParams = {
     maxObstacles: 5,        
     caveMinWidth: 3000
 };
+
+/**
+ * Initialize high score comparison values - call this during initApp()
+ */
+function initHighScoreComparison() {
+    // Get personal best from localStorage
+    try {
+        personalBest = parseInt(localStorage.getItem('jbcave-highscore') || '0');
+    } catch (e) {
+        personalBest = 0;
+    }
+    
+    // Default global best to 0, will be updated when we fetch scores
+    globalBest = 0;
+}
 
 /**
  * Format a date string to a human-readable format including time
@@ -286,7 +305,9 @@ function init() {
     obstacleTimer = 0;
     particles = [];
     lastSubmittedScore = 0; // Reset the last submitted score
-
+    // Reset high score achievement flags
+    personalBestBeaten = false;
+    globalHighScoreBeaten = false;
     
     // Get values from sliders if game was started from menu
     if (gameState === "menu") {
@@ -438,6 +459,85 @@ function createObstacle() {
 }
 
 /**
+ * Update score display with high score achievement effects
+ * Call this in your update function where you update the score display
+ */
+function updateScoreDisplay() {
+    // Get score display element
+    const scoreElement = document.getElementById('score-display');
+    
+    // Calculate current score (floored to integer)
+    const currentScore = Math.floor(score);
+    
+    // Check for high score achievements
+    if (!personalBestBeaten && currentScore > personalBest) {
+        // First time beating personal best
+        personalBestBeaten = true;
+        
+        // Apply personal best effect
+        scoreElement.classList.add('personal-best');
+        
+        // Create achievement notification
+        showAchievement('New Personal Best!', 'personal');
+        
+        // Remove effect after a while
+        setTimeout(() => {
+            scoreElement.classList.remove('personal-best');
+        }, 5000);
+    }
+    
+    // Check for global high score achievement
+    if (!globalHighScoreBeaten && globalBest > 0 && currentScore > globalBest) {
+        // First time beating global high score
+        globalHighScoreBeaten = true;
+        
+        // Apply global best effect
+        scoreElement.classList.remove('personal-best');
+        scoreElement.classList.add('global-best');
+        
+        // Create achievement notification
+        showAchievement('New Global High Score!', 'global');
+        
+        // Keep effect until end of game
+    }
+    
+    // Update the score display text
+    scoreElement.textContent = `Score: ${currentScore}`;
+}
+/**
+ * Show achievement notification
+ */
+function showAchievement(message, type) {
+    // Check if notification element already exists
+    let notification = document.getElementById('achievement-notification');
+    
+    // Create if it doesn't exist
+    if (!notification) {
+        notification = document.createElement('div');
+        notification.id = 'achievement-notification';
+        document.getElementById('game-container').appendChild(notification);
+    }
+    
+    // Set content and apply appropriate class
+    notification.textContent = message;
+    notification.className = `achievement ${type}-achievement`;
+    
+    // Show notification
+    notification.style.display = 'block';
+    
+    // Animate it
+    notification.classList.add('show-achievement');
+    
+    // Hide after duration
+    setTimeout(() => {
+        notification.classList.remove('show-achievement');
+        setTimeout(() => {
+            notification.style.display = 'none';
+        }, 500);
+    }, 3000);
+}
+
+/**
  * Update game state
  */
 function update(deltaFactor) {
@@ -526,8 +626,8 @@ function update(deltaFactor) {
     
     // Update score based on time rather than frames
     score += deltaFactor * 0.6;
-    scoreDisplay.textContent = `Score: ${Math.floor(score)}`;
-    
+    updateScoreDisplay();
+        
     // Increase difficulty gradually
     if (Math.floor(score) % difficultyIncreaseInterval === 0 && 
         Math.floor(score) > 0 && 
@@ -1072,6 +1172,10 @@ function fetchHighScores() {
         .then(data => {
             if (data.success && data.scores) {
                 globalHighScores = data.scores;
+                if (globalHighScores.length > 0) {
+                    // Global best will be the highest score
+                    globalBest = globalHighScores[0].score;
+                }
                 displayGlobalHighScores();
             } else {
                 throw new Error(data.message || 'Invalid data format');
