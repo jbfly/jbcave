@@ -1238,3 +1238,90 @@ button:hover {
         padding: 3px 8px;
     }
 }
+
+/* Title at the top */
+.menu-title {
+    flex-shrink: 0; /* Prevent title from shrinking */
+    margin: 15px 0 10px 0;
+}
+
+/* Center section with scores can scroll internally */
+.menu-content {
+    flex: 1; /* Take available space */
+    overflow-y: auto; /* Allow scrolling here */
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin: 0;
+    padding: 5px 0;
+}
+
+/* Keep leaderboard headings visible */
+#leaderboard-container h3,
+.leaderboard-tabs {
+    position: sticky;
+    top: 0;
+    background-color: rgba(0, 0, 0, 0.85);
+    z-index: 2;
+    padding: 5px 0;
+}
+
+/* Style for scrollbar in menu content */
+.menu-content::-webkit-scrollbar {
+    width: 6px;
+}
+
+.menu-content::-webkit-scrollbar-track {
+    background: rgba(57, 153, 204, 0.1);
+}
+
+.menu-content::-webkit-scrollbar-thumb {
+    background-color: #39c;
+    border-radius: 3px;
+}
+
+/* Ensure the game controls are always visible at the bottom */
+.game-controls {
+    flex-shrink: 0; /* Prevent shrinking */
+    margin: 10px 0 15px 0;
+    padding: 0;
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+/* Make just the leaderboard content scrollable */
+#leaderboard-container {
+    max-height: 350px; /* Fixed height - adjust as needed */
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+/* Keep the table header visible */
+#leaderboard-container h3,
+.leaderboard-tabs {
+    flex-shrink: 0; /* Don't let these shrink */
+}
+
+/* Make the actual leaderboard content area scrollable */
+.leaderboard-content {
+    overflow-y: auto; /* Only this part scrolls */
+    max-height: 280px; /* Adjust as needed */
+}
+
+/* Style scrollbar for better visibility */
+.leaderboard-content::-webkit-scrollbar {
+    width: 6px;
+}
+
+.leaderboard-content::-webkit-scrollbar-track {
+    background: rgba(57, 153, 204, 0.1);
+    border-radius: 3px;
+}
+
+.leaderboard-content::-webkit-scrollbar-thumb {
+    background-color: #39c;
+    border-radius: 3px;
+}
