@@ -1151,3 +1151,71 @@ button:hover {
       margin-top: 2px;
     }
   }
+  
+/* Pause Menu Styling */
+#pause-menu {
+    z-index: 15; /* Make sure it's above game but below high score input */
+    background-color: rgba(0, 0, 0, 0.85);
+}
+
+#pause-menu h2 {
+    color: #39c;
+    text-shadow: 0 0 8px #39c;
+    margin-bottom: 10px;
+    font-family: 'Press Start 2P', monospace, sans-serif;
+    font-size: 28px;
+}
+
+#pause-score {
+    font-size: 24px;
+    margin: 15px 0;
+    color: white;
+}
+
+/* Countdown Animation */
+#countdown-container {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.7);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 16;
+}
+
+#countdown {
+    font-size: 80px;
+    font-weight: bold;
+    color: white;
+    text-shadow: 0 0 15px #39c, 0 0 30px #39c;
+    animation: countdown-pulse 1s infinite alternate;
+}
+
+@keyframes countdown-pulse {
+    from { transform: scale(1.0); opacity: 0.8; }
+    to { transform: scale(1.2); opacity: 1; }
+}
+
+/* Resume button styling */
+#resume-btn {
+    background-color: #3498db; /* Blue for resume */
+    box-shadow: 0 4px 0 #2980b9, 0 0 10px rgba(52, 152, 219, 0.5);
+}
+
+#resume-btn:hover {
+    background-color: #2980b9;
+    box-shadow: 0 2px 0 #2272a8, 0 0 15px rgba(52, 152, 219, 0.7);
+}
+
+#restart-from-pause-btn {
+    background-color: #4CAF50; /* Green for restart */
+    box-shadow: 0 4px 0 #2E7D32, 0 0 10px rgba(76, 175, 80, 0.5);
+}
+
+#restart-from-pause-btn:hover {
+    background-color: #45a049;
+    box-shadow: 0 2px 0 #2E7D32, 0 0 15px rgba(76, 175, 80, 0.7);
+}

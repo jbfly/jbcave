@@ -89,6 +89,8 @@ let globalHighScoreBeaten = false;
 let personalBest = 0;
 let globalBest = 0;
 let beatenGlobalScores = []; // Track which global scores we've already shown notifications for
+let isPaused = false;
+let countdownActive = false;
 
 
 // Particle system for explosions
@@ -126,6 +128,108 @@ const caveParams = {
     maxObstacles: 5,        
     caveMinWidth: 3000
 };
+
+/**
+ * Toggle pause state
+ */
+function togglePause() {
+    if (gameState !== "playing") return; // Only allow pausing during active gameplay
+    
+    if (isPaused) {
+        // Start countdown before unpausing
+        startUnpauseCountdown();
+    } else {
+        // Pause the game immediately
+        pauseGame();
+    }
+}
+
+/**
+ * Pause the game
+ */
+function pauseGame() {
+    isPaused = true;
+    
+    // Update score display in pause menu
+    document.getElementById('pause-score').textContent = `Score: ${Math.floor(score)}`;
+    
+    // Show pause menu
+    document.getElementById('pause-menu').style.display = 'flex';
+}
+
+/**
+ * Start countdown and then unpause
+ */
+function startUnpauseCountdown() {
+    if (countdownActive) return; // Prevent multiple countdowns
+    
+    countdownActive = true;
+    const countdownContainer = document.getElementById('countdown-container');
+    const countdownElement = document.getElementById('countdown');
+    
+    // Hide pause menu buttons during countdown
+    document.querySelectorAll('#pause-menu .button-container button').forEach(btn => {
+        btn.style.display = 'none';
+    });
+    
+    // Show countdown
+    countdownContainer.style.display = 'flex';
+    
+    // Start at 3
+    let count = 3;
+    countdownElement.textContent = count;
+    
+    // Update countdown every second
+    const countdownInterval = setInterval(() => {
+        count--;
+        
+        if (count > 0) {
+            countdownElement.textContent = count;
+        } else {
+            // End countdown and unpause
+            clearInterval(countdownInterval);
+            unpauseGame();
+            
+            // Reset UI elements
+            countdownContainer.style.display = 'none';
+            document.querySelectorAll('#pause-menu .button-container button').forEach(btn => {
+                btn.style.display = 'block';
+            });
+            
+            countdownActive = false;
+        }
+    }, 1000);
+}
+
+/**
+ * Unpause the game
+ */
+function unpauseGame() {
+    isPaused = false;
+    document.getElementById('pause-menu').style.display = 'none';
+}
+/**
+ * Setup pause control event listeners
+ */
+function setupPauseControls() {
+    // Keyboard pause controls
+    window.addEventListener('keydown', (e) => {
+        if ((e.key === 'Escape' || e.key === 'p' || e.key === 'P') && gameState === "playing") {
+            togglePause();
+        }
+    });
+    
+    // Pause menu button controls
+    document.getElementById('resume-btn').addEventListener('click', togglePause);
+    document.getElementById('restart-from-pause-btn').addEventListener('click', () => {
+        unpauseGame();
+        init(); // Restart the game
+    });
+    document.getElementById('menu-from-pause-btn').addEventListener('click', () => {
+        unpauseGame();
+        showMainMenu();
+    });
+}
 
 /**
  * Initialize high score comparison values - call this during initApp()
@@ -582,10 +686,14 @@ function showAchievement(message, type) {
  */
 function update(deltaFactor) {
     // If in menu state, do nothing
+
     if (gameState === "menu") {
         return;
     }
-    
+    // If game is paused, do nothing (add this check)
+    if (isPaused) {
+        return;
+    }
     // If game over, just update restart delay counter and particles
     if (gameState === "gameover") {
         restartDelay++;
@@ -1680,7 +1788,7 @@ function initApp() {
     setupHelpMenu();
     // Fetch high scores
     fetchHighScores();
-    
+    setupPauseControls();
     // Start game loop
     window.gameLoopRunning = true;
     requestAnimationFrame(gameLoop);
