@@ -1186,6 +1186,7 @@ function toggleScores(e) {
 /**
  * Fetch high scores from the server
  */
+// Update the fetchHighScores function to show global scores by default
 function fetchHighScores() {
     // Display personal scores
     displayPersonalScores();
@@ -1217,6 +1218,9 @@ function fetchHighScores() {
                     globalBest = globalHighScores[0].score;
                 }
                 displayGlobalHighScores();
+                
+                // Show global scores by default
+                switchLeaderboardTab('global');
             } else {
                 throw new Error(data.message || 'Invalid data format');
             }
@@ -1224,6 +1228,9 @@ function fetchHighScores() {
         .catch(error => {
             console.error('Error fetching high scores:', error);
             leaderboardEl.innerHTML = '<div class="loading">Could not load scores. Using local storage only.</div>';
+            
+            // Show personal scores as fallback
+            switchLeaderboardTab('personal');
         });
 }
 
@@ -1623,6 +1630,18 @@ function setupEventListeners() {
     }, { passive: false });
 }
 
+function setupHelpMenu() {
+    // Help button
+    document.getElementById('help-btn').addEventListener('click', () => {
+        document.getElementById('help-overlay').style.display = 'flex';
+    });
+    
+    // Close help button
+    document.getElementById('help-close-btn').addEventListener('click', () => {
+        document.getElementById('help-overlay').style.display = 'none';
+    });
+}
+
 /**
  * Initialize the application
  */
@@ -1657,7 +1676,8 @@ function initApp() {
     
     // Setup all event listeners
     setupEventListeners();
-    
+    // Setup help menu
+    setupHelpMenu();
     // Fetch high scores
     fetchHighScores();
     

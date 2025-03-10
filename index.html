@@ -4,6 +4,12 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>JBCave</title>
+    
+    <!-- Google Fonts: Press Start 2P -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+    
     <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
@@ -23,33 +29,46 @@
         <div id="start-menu" class="overlay">
             <h1 class="menu-title">JBCave</h1>
             
-            <div class="menu-column left-column">
-                <p class="high-score main-menu-item" id="menu-high-score">High Score: 0</p>
-                <p class="controls-info main-menu-item">
-                    Use SPACE, UP arrow, or tap to fly up.<br>
-                    Release to fall down.<br>
-                    Avoid the cave walls and obstacles!
-                </p>
-                
-                <div class="button-container main-menu-item">
-                    <button id="start-btn">Start Game</button>
-                    <button id="settings-btn" class="secondary-btn">Game Settings</button>
-                </div>
+            <!-- High score in top left -->
+            <div class="top-score-display">
+                <p id="menu-high-score">High Score: 0</p>
             </div>
             
-            <div class="menu-column right-column">
-                <!-- Leaderboard Section with Tabs -->
+            <!-- Hidden settings button (for future use) -->
+            <div id="settings-btn" class="hidden-settings secondary-btn">Game Settings</div>
+            
+            <!-- Main content area -->
+            <div class="menu-content">
+                <!-- High Scores Section with Tabs -->
                 <div id="leaderboard-container" class="main-menu-item">
-                    <h3>Leaderboard</h3>
+                    <h3>High Scores</h3>
                     <div class="leaderboard-tabs">
-                        <button id="personal-tab" class="tab-button active">My Scores</button>
-                        <button id="global-tab" class="tab-button">Global Scores</button>
+                        <button id="global-tab" class="tab-button active">Global Scores</button>
+                        <button id="personal-tab" class="tab-button">My Scores</button>
                     </div>
-                    <div id="personal-leaderboard" class="leaderboard-content"></div>
-                    <div id="global-leaderboard" class="leaderboard-content" style="display:none;"></div>
+                    <div id="global-leaderboard" class="leaderboard-content"></div>
+                    <div id="personal-leaderboard" class="leaderboard-content" style="display:none;"></div>
                 </div>
             </div>
             
+            <!-- Game controls -->
+            <div class="game-controls">
+                <button id="start-btn">Start Game</button>
+                <button id="help-btn" class="secondary-btn">How to Play</button>
+            </div>
+            
+            <!-- Help overlay -->
+            <div id="help-overlay" class="sub-overlay">
+                <div class="help-content">
+                    <h3>How to Play</h3>
+                    <p>Use SPACE, UP arrow, or tap to fly up.<br>
+                    Release to fall down.<br>
+                    Avoid the cave walls and obstacles!</p>
+                    <button id="help-close-btn" class="secondary-btn">Close</button>
+                </div>
+            </div>
+            
+            <!-- Settings panel (hidden but kept for future use) -->
             <div class="settings-container" id="settings-panel">
                 <h3>Game Settings</h3>
                 <div class="slider-container">

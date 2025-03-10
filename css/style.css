@@ -717,3 +717,385 @@ button:hover {
 #achievement-notification.rank-achievement {
     top: 80px; /* Adjust this if needed to position correctly */
 }
+
+/* Add this to your style.css file */
+
+/* Import Press Start 2P font from Google Fonts */
+@import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
+
+/* Update main title styling */
+.menu-title {
+    font-family: 'Press Start 2P', cursive;
+    font-size: 48px;
+    margin: 25px 0 15px 0;
+    color: #39c;
+    text-shadow: 0 0 10px #39c, 2px 2px 0px #000;
+    letter-spacing: 2px;
+    text-align: center;
+}
+
+/* High score in top left */
+.top-score-display {
+    position: absolute;
+    top: 15px;
+    left: 15px;
+    text-align: left;
+    z-index: 10;
+    background-color: rgba(0, 0, 0, 0.5);
+    padding: 5px 10px;
+    border-radius: 5px;
+    border: 1px solid #39c;
+}
+
+#menu-high-score {
+    font-size: 16px;
+    margin: 0;
+    color: #ffdd57;
+    text-shadow: 1px 1px 2px #000;
+}
+
+/* Updated main menu content structure */
+.menu-content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 90%;
+    max-width: 600px;
+    margin: 20px 0;
+}
+
+/* Game controls container */
+.game-controls {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+    margin-top: 10px;
+}
+
+/* Start button styling update */
+#start-btn {
+    background-color: #4CAF50;
+    font-size: 20px;
+    font-weight: bold;
+    padding: 12px 24px;
+    min-width: 220px;
+    border-radius: 8px;
+    box-shadow: 0 4px 0 #2E7D32, 0 0 10px rgba(76, 175, 80, 0.5);
+    transition: all 0.2s;
+}
+
+#start-btn:hover {
+    background-color: #45a049;
+    transform: translateY(2px);
+    box-shadow: 0 2px 0 #2E7D32, 0 0 15px rgba(76, 175, 80, 0.7);
+}
+
+#start-btn:active {
+    transform: translateY(4px);
+    box-shadow: none;
+}
+
+/* Secondary button styling update */
+.secondary-btn {
+    background-color: #555;
+    font-size: 16px;
+    padding: 8px 16px;
+    min-width: 180px;
+    border-radius: 6px;
+    box-shadow: 0 3px 0 #333;
+    transition: all 0.2s;
+}
+
+.secondary-btn:hover {
+    background-color: #666;
+    transform: translateY(2px);
+    box-shadow: 0 1px 0 #333;
+}
+
+/* Help overlay */
+.sub-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.85);
+    display: none;
+    justify-content: center;
+    align-items: center;
+    z-index: 20;
+}
+
+.help-content {
+    background-color: #222;
+    border: 2px solid #39c;
+    border-radius: 10px;
+    padding: 20px;
+    max-width: 80%;
+    text-align: center;
+    box-shadow: 0 0 20px rgba(57, 153, 204, 0.5);
+}
+
+.help-content h3 {
+    color: #39c;
+    margin-top: 0;
+}
+
+.help-content p {
+    line-height: 1.6;
+    margin-bottom: 20px;
+}
+
+/* Hide settings button but keep it in DOM */
+.hidden-settings {
+    position: absolute;
+    opacity: 0;
+    pointer-events: none;
+}
+
+/* Updated leaderboard styling */
+#leaderboard-container {
+    width: 100%;
+    max-width: 500px;
+    margin: 10px 0;
+    background-color: rgba(0, 0, 0, 0.3);
+    border-radius: 8px;
+    border: 1px solid #39c;
+    padding: 10px;
+}
+
+#leaderboard-container h3 {
+    text-align: center;
+    color: #39c;
+    margin: 5px 0 10px 0;
+    font-size: 20px;
+    font-family: 'Press Start 2P', cursive;
+    font-size: 16px;
+}
+
+/* Updated tabs styling */
+.leaderboard-tabs {
+    display: flex;
+    justify-content: center;
+    margin: 10px 0;
+    gap: 5px;
+}
+
+.tab-button {
+    padding: 8px 15px;
+    background-color: #333;
+    border: 1px solid #555;
+    color: #ccc;
+    cursor: pointer;
+    font-size: 14px;
+    border-radius: 5px;
+    transition: all 0.2s;
+}
+
+.tab-button.active {
+    background-color: #39c;
+    color: white;
+    border-color: #39c;
+    box-shadow: 0 0 10px rgba(57, 153, 204, 0.5);
+}
+
+.tab-button:hover:not(.active) {
+    background-color: #444;
+    border-color: #666;
+}
+
+/* Updated table styling */
+.leaderboard-table {
+    width: 100%;
+    max-width: 500px;
+    margin: 0 auto;
+    border-collapse: collapse;
+    border-radius: 5px;
+    overflow: hidden;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.3);
+}
+
+.leaderboard-table th {
+    background-color: #2a2a2a;
+    color: #39c;
+    padding: 8px;
+    text-align: left;
+    font-size: 14px;
+}
+
+.leaderboard-table td {
+    padding: 8px;
+    text-align: left;
+    font-size: 14px;
+    border-bottom: 1px solid #333;
+}
+
+.leaderboard-table tr:nth-child(odd) {
+    background-color: rgba(0, 0, 0, 0.2);
+}
+
+.leaderboard-table tr:nth-child(even) {
+    background-color: rgba(57, 153, 204, 0.05);
+}
+
+.leaderboard-table tr:hover {
+    background-color: rgba(57, 153, 204, 0.1);
+}
+
+/* Responsive adjustments */
+@media (max-width: 800px) {
+    .menu-title {
+        font-size: 32px;
+        margin: 20px 0 10px 0;
+    }
+    
+    .top-score-display {
+        top: 10px;
+        left: 10px;
+    }
+    
+    #menu-high-score {
+        font-size: 14px;
+    }
+    
+    .help-content {
+        padding: 15px;
+        max-width: 90%;
+    }
+}
+
+/* Landscape mode adjustments */
+@media (max-width: 800px) and (orientation: landscape) {
+    .menu-title {
+        font-size: 28px;
+        margin: 10px 0 5px 0;
+    }
+    
+    .top-score-display {
+        top: 5px;
+        left: 5px;
+    }
+    
+    #menu-high-score {
+        font-size: 12px;
+    }
+    
+    .menu-content {
+        margin: 5px 0;
+    }
+    
+    .game-controls {
+        margin-top: 5px;
+    }
+    
+    #start-btn {
+        padding: 8px 16px;
+        font-size: 16px;
+    }
+}
+
+/* Add these layout fixes to your CSS */
+
+/* Make the overlay use flex with better spacing */
+#start-menu {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between; /* This will push content to edges, maximizing space */
+    padding: 10px 0; /* Reduce vertical padding */
+    max-height: 100vh; /* Ensure it doesn't exceed viewport height */
+    overflow: hidden; /* Hide overflow to prevent scrolling */
+    box-sizing: border-box; /* Include padding in height calculation */
+}
+
+/* Adjust title to take less vertical space */
+.menu-title {
+    font-size: 38px; /* Slightly smaller */
+    margin: 10px 0; /* Less margin */
+}
+
+/* Make leaderboard more compact */
+#leaderboard-container {
+    margin: 5px 0;
+    max-height: calc(60vh - 120px); /* Limit height to prevent overflow */
+    overflow-y: auto; /* Allow scrolling within leaderboard if needed */
+}
+
+/* Reduce some spacing in the leaderboard */
+.leaderboard-table th, 
+.leaderboard-table td {
+    padding: 5px 8px;
+}
+
+/* Reduce spacing around High Scores heading */
+#leaderboard-container h3 {
+    margin: 3px 0 5px 0;
+}
+
+/* Position the start button better */
+.game-controls {
+    margin: 10px 0 15px 0; /* More space at bottom */
+    padding-bottom: 5px;
+}
+
+/* Make tabs more compact */
+.leaderboard-tabs {
+    margin: 5px 0;
+}
+
+/* For really small screens, make everything more compact */
+@media (max-height: 600px) {
+    .menu-title {
+        font-size: 32px;
+        margin: 5px 0;
+    }
+    
+    #leaderboard-container {
+        max-height: calc(60vh - 80px);
+    }
+    
+    .leaderboard-table th, 
+    .leaderboard-table td {
+        padding: 3px 5px;
+        font-size: 12px;
+    }
+    
+    .game-controls {
+        margin: 5px 0 10px 0;
+    }
+    
+    #start-btn {
+        padding: 8px 16px;
+        font-size: 16px;
+        min-width: 180px;
+    }
+}
+
+/* For very small screens, consider stacking in a different way */
+@media (max-height: 500px) {
+    #start-menu {
+        flex-direction: row;
+        flex-wrap: wrap;
+        justify-content: center;
+        align-content: center;
+    }
+    
+    .menu-title {
+        width: 100%;
+        font-size: 28px;
+        margin: 0;
+    }
+    
+    #leaderboard-container {
+        width: 70%;
+        max-height: 70vh;
+    }
+    
+    .game-controls {
+        width: 30%;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+    }
+}
