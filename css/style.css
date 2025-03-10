@@ -1368,3 +1368,35 @@ button:hover {
     font-weight: normal;
     text-shadow: none;
 }
+
+/* Add styling for the personal best score screen */
+
+/* Personal best score styling */
+#high-score-input.personal-best-score h2 {
+    color: #39c;  /* Blue color (matches game theme) */
+    text-shadow: 0 0 8px #39c;
+    font-size: 24px;
+}
+
+#high-score-input.personal-best-score {
+    background-color: rgba(0, 0, 0, 0.8);
+    border: 1px solid #39c;
+}
+
+/* Emphasize high score value for personal best */
+#high-score-input.personal-best-score #high-score-value {
+    font-size: 22px;
+    color: #fff;
+    margin: 10px 0;
+}
+
+/* Add subtitle for personal best */
+#high-score-input.personal-best-score h2::after {
+    content: "You beat your previous personal record!";
+    display: block;
+    font-size: 14px;
+    color: #ccc;
+    margin-top: 8px;
+    font-weight: normal;
+    text-shadow: none;
+}
