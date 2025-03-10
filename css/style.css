@@ -604,7 +604,9 @@ button:hover {
     }
     
     #achievement-notification {
-        top: 35px;
+        top: 10px;
+        left: 50%;
+        transform: translateX(-50%);
     }
 }
 
@@ -706,16 +708,21 @@ button:hover {
 
 /* Custom animation for rank notifications */
 @keyframes show-rank-notification {
-    0% { opacity: 0; transform: translate(-50%, -20px); }
-    15% { opacity: 0.8; transform: translate(-50%, 0); } /* Less opaque */
-    85% { opacity: 0.8; transform: translate(-50%, 0); }
-    100% { opacity: 0; transform: translate(-50%, -20px); }
+    0% { opacity: 0; transform: translate(-50%, -5px); }
+    15% { opacity: 0.9; transform: translate(-50%, 0); }
+    85% { opacity: 0.9; transform: translate(-50%, 0); }
+    100% { opacity: 0; transform: translate(-50%, -5px); }
 }
 
-/* Position rank achievements slightly lower than other achievements 
-   to avoid overlap if multiple achievements happen close together */
+/* Specific styling for rank achievements */
 #achievement-notification.rank-achievement {
-    top: 80px; /* Adjust this if needed to position correctly */
+    border: 1px solid #4CAF50; /* Green border */
+    color: #4CAF50;
+    text-shadow: 0 0 5px rgba(76, 175, 80, 0.5);
+    font-size: 12px; /* Smaller than other achievements */
+    padding: 4px 10px;
+    top: 10px; /* Aligned with score */
+    opacity: 0.9;
 }
 
 /* Add this to your style.css file */
@@ -1151,7 +1158,7 @@ button:hover {
       margin-top: 2px;
     }
   }
-  
+
 /* Pause Menu Styling */
 #pause-menu {
     z-index: 15; /* Make sure it's above game but below high score input */
@@ -1218,4 +1225,16 @@ button:hover {
 #restart-from-pause-btn:hover {
     background-color: #45a049;
     box-shadow: 0 2px 0 #2E7D32, 0 0 15px rgba(76, 175, 80, 0.7);
+}
+
+@media (max-width: 500px) {
+    #achievement-notification {
+        font-size: 12px;
+        padding: 6px 10px;
+    }
+    
+    #achievement-notification.rank-achievement {
+        font-size: 11px;
+        padding: 3px 8px;
+    }
 }
