@@ -1,3 +1,14 @@
-config.php
+# Ignore sensitive configuration
+php/config.php
 *.local.php
 .env
+
+# Ignore system files
+.DS_Store
+Thumbs.db
+
+# Ignore editor files
+.vscode/
+.idea/
+*.swp
+*.swo
