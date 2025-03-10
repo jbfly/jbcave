@@ -645,6 +645,26 @@ function updateScoreDisplay() {
     // Update the score display text
     scoreElement.textContent = `Score: ${currentScore}`;
 }
+
+/**
+ * Check if a score qualifies for the personal top scores
+ */
+function isPersonalHighScore(playerScore) {
+    try {
+        let personalScores = JSON.parse(localStorage.getItem('jbcave-scores') || '[]');
+        
+        // If there are fewer than 10 personal scores, any score qualifies
+        if (personalScores.length < 10) return true;
+        
+        // Otherwise, check if the score is higher than the lowest personal score
+        const lowestScore = Math.min(...personalScores);
+        return playerScore > lowestScore;
+    } catch (e) {
+        console.log('Error checking personal high score', e);
+        return false;
+    }
+}
+
 /**
  * Show achievement notification with type-specific durations
  */
@@ -837,7 +857,10 @@ function checkCollisions() {
         gameOver();
     }
 }
-function showHighScoreInput() {
+/**
+ * Update showHighScoreInput to take qualification flags
+ */
+function showHighScoreInput(qualifiesForGlobal, qualifiesForPersonal) {
     // Clear the name input field
     document.getElementById('name-input').value = '';
     
@@ -854,14 +877,15 @@ function showHighScoreInput() {
     // Set the score value
     document.getElementById('high-score-value').textContent = `Your score: ${Math.floor(score)}`;
     
-    // Check if this might be a global high score
-    if (CONFIG.useServerFeatures && isGlobalHighScore(score)) {
+    // Handle different cases for high score messaging
+    if (qualifiesForGlobal) {
         // Check if it's actually the #1 score
         const isTopScore = globalHighScores.length === 0 || score > globalHighScores[0].score;
         
         if (isTopScore) {
             // Add a class to highlight the screen for the #1 score
             document.getElementById('high-score-input').classList.add('global-high-score');
+            document.getElementById('high-score-input').classList.remove('leaderboard-score');
             
             // Update the heading to show it's the #1 global high score
             const heading = document.getElementById('high-score-input').querySelector('h2');
@@ -869,6 +893,7 @@ function showHighScoreInput() {
         } else {
             // Add a different class for leaderboard qualification
             document.getElementById('high-score-input').classList.add('leaderboard-score');
+            document.getElementById('high-score-input').classList.remove('global-high-score');
             
             // Update the heading for leaderboard qualification
             const heading = document.getElementById('high-score-input').querySelector('h2');
@@ -877,16 +902,27 @@ function showHighScoreInput() {
         
         // Make the submit button more prominent in both cases
         document.getElementById('submit-score-btn').classList.add('highlight-btn');
-    } else {
-        // Reset classes for normal scores
+    } else if (qualifiesForPersonal) {
+        // Personal best only
         document.getElementById('high-score-input').classList.remove('global-high-score');
         document.getElementById('high-score-input').classList.remove('leaderboard-score');
+        document.getElementById('high-score-input').classList.add('personal-best-score');
         
-        // Reset heading
+        // Update heading
         const heading = document.getElementById('high-score-input').querySelector('h2');
-        heading.textContent = "New High Score!";
+        heading.textContent = "Personal Best Score!";
         
-        // Reset submit button styling
+        // Normal submit button
+        document.getElementById('submit-score-btn').classList.remove('highlight-btn');
+    } else {
+        // Should not happen with the updated logic, but just in case
+        document.getElementById('high-score-input').classList.remove('global-high-score');
+        document.getElementById('high-score-input').classList.remove('leaderboard-score');
+        document.getElementById('high-score-input').classList.remove('personal-best-score');
+    
+        const heading = document.getElementById('high-score-input').querySelector('h2');
+        heading.textContent = "New Score";
+    
         document.getElementById('submit-score-btn').classList.remove('highlight-btn');
     }
     
@@ -896,7 +932,7 @@ function showHighScoreInput() {
     document.getElementById('activate-input-btn').style.display = 'block';
 }
 /**
- * Game over
+ * Modify gameOver function to only show high score input for qualifying scores
  */
 function gameOver() {
     isGameOver = true;
@@ -947,11 +983,16 @@ function gameOver() {
         console.log('Could not save personal scores', e);
     }
     
-    // Always prompt for name to submit score if over 100
-    if (score > 100 && score !== lastSubmittedScore && CONFIG.useServerFeatures) {
+    // Check if score is high enough to prompt for name entry
+    const qualifiesForGlobal = CONFIG.useServerFeatures && isGlobalHighScore(score);
+    const qualifiesForPersonal = isPersonalHighScore(score);
+    
+    // Only show high score input if the score qualifies for either leaderboard
+    // and is over 100 and hasn't been submitted yet
+    if (score > 100 && score !== lastSubmittedScore && (qualifiesForGlobal || qualifiesForPersonal)) {
         // Show high score input after a short delay to see explosion
         setTimeout(() => {
-            showHighScoreInput();
+            showHighScoreInput(qualifiesForGlobal, qualifiesForPersonal);
             // Unblock input after screen is shown
             setTimeout(() => {
                 inputBlocked = false;
