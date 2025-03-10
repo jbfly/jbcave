@@ -1,10 +1,17 @@
 <?php
 header('Content-Type: application/json');
 header('Access-Control-Allow-Origin: *');
-header('Access-Control-Allow-Methods: GET');
+header('Access-Control-Allow-Methods: GET, OPTIONS');
+header('Access-Control-Allow-Headers: Content-Type');
 
-// Load database configuration
+// Load configuration
 require_once('config.php');
+
+// Check if database features are enabled
+if (!isset($DB_CONFIG['enabled']) || !$DB_CONFIG['enabled']) {
+    echo json_encode(['success' => false, 'message' => 'Database features are disabled']);
+    exit;
+}
 
 // Number of scores to return
 $limit = isset($_GET['limit']) ? (int)$_GET['limit'] : 10;
@@ -29,6 +36,6 @@ try {
     
 } catch (PDOException $e) {
     http_response_code(500);
-    echo json_encode(['error' => 'Database error', 'details' => $e->getMessage()]);
+    echo json_encode(['success' => false, 'error' => 'Database error', 'message' => $e->getMessage()]);
 }
 ?>

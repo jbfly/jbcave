@@ -1,4 +1,4 @@
-# Ignore sensitive configuration
+# Ignore sensitive configuration files
 php/config.php
 *.local.php
 .env
@@ -6,9 +6,27 @@ php/config.php
 # Ignore system files
 .DS_Store
 Thumbs.db
+.directory
+Desktop.ini
 
 # Ignore editor files
 .vscode/
 .idea/
 *.swp
 *.swo
+*~
+
+# Ignore logs and temporary files
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.npm
+.eslintcache
+.node_repl_history
+
+# Ignore backup files
+*.bak
+*.backup
+*.old

@@ -1,11 +1,23 @@
 <?php
-// Database configuration template
-// Copy this file to config.php and update with your actual credentials
+/**
+ * JBCave Database Configuration Template
+ * 
+ * INSTRUCTIONS:
+ * 1. Copy this file to config.php
+ * 2. Update the values with your actual database credentials
+ * 3. Make sure config.php is listed in .gitignore to avoid committing sensitive data
+ */
+
+// Database configuration
 $DB_CONFIG = [
-    'host' => 'localhost',
+    // Database connection details
+    'host'     => 'localhost',
     'database' => 'jbcave_db',
-    'user' => 'jbcave_user',
+    'user'     => 'jbcave_user',
     'password' => 'your_password_here',
-    'enabled' => true
+    
+    // Set to false to disable database-related features
+    // This allows the game to work without a database (using only local storage)
+    'enabled'  => true
 ];
 ?>
