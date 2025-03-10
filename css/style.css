@@ -684,3 +684,36 @@ button:hover {
     85% { opacity: 1; transform: translate(-50%, 0); }
     100% { opacity: 0; transform: translate(-50%, -20px); }
 }
+
+/* Rank achievement notification styling - more subtle than other notifications */
+.rank-achievement {
+    border: 1px solid #4CAF50; /* Green border */
+    color: #4CAF50;
+    text-shadow: 0 0 5px rgba(76, 175, 80, 0.5);
+    background-color: rgba(0, 0, 0, 0.6);
+    font-size: 14px; /* Smaller than other achievements */
+    padding: 6px 12px;
+    max-width: 300px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* Make rank achievements appear for less time with a quicker animation */
+.rank-achievement.show-achievement {
+    animation: show-rank-notification 2s ease-in-out; /* Shorter duration */
+}
+
+/* Custom animation for rank notifications */
+@keyframes show-rank-notification {
+    0% { opacity: 0; transform: translate(-50%, -20px); }
+    15% { opacity: 0.8; transform: translate(-50%, 0); } /* Less opaque */
+    85% { opacity: 0.8; transform: translate(-50%, 0); }
+    100% { opacity: 0; transform: translate(-50%, -20px); }
+}
+
+/* Position rank achievements slightly lower than other achievements 
+   to avoid overlap if multiple achievements happen close together */
+#achievement-notification.rank-achievement {
+    top: 80px; /* Adjust this if needed to position correctly */
+}

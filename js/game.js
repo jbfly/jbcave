@@ -88,6 +88,8 @@ let personalBestBeaten = false;
 let globalHighScoreBeaten = false;
 let personalBest = 0;
 let globalBest = 0;
+let beatenGlobalScores = []; // Track which global scores we've already shown notifications for
+
 
 // Particle system for explosions
 let particles = [];
@@ -139,7 +141,38 @@ function initHighScoreComparison() {
     // Default global best to 0, will be updated when we fetch scores
     globalBest = 0;
 }
-
+/**
+ * Check if player has surpassed any global high scores
+ */
+function checkGlobalRankAchievements(currentScore) {
+    // Only process if we have global scores and server features are enabled
+    if (!CONFIG.useServerFeatures || globalHighScores.length === 0) return;
+    
+    // Go through each global score from bottom to top (to get the easiest ones first)
+    for (let i = globalHighScores.length - 1; i >= 0; i--) {
+        const scoreEntry = globalHighScores[i];
+        
+        // Create a unique key for this score entry
+        const scoreKey = `${scoreEntry.player_name}_${scoreEntry.score}`;
+        
+        // Skip if we've already shown notification for this entry
+        if (beatenGlobalScores.includes(scoreKey)) continue;
+        
+        // Check if player's score just surpassed this score
+        if (currentScore > scoreEntry.score) {
+            // Mark as beaten
+            beatenGlobalScores.push(scoreKey);
+            
+            // Show notification
+            const rank = i + 1;
+            showAchievement(`You Beat #${rank} - ${scoreEntry.player_name} - ${scoreEntry.score}`, 'rank');
+            
+            // We only show one notification at a time to avoid spam
+            // So we break after finding the first one
+            break;
+        }
+    }
+}
 /**
  * Format a date string to a human-readable format including time
  * @param {string} dateString - ISO date string from database
@@ -308,10 +341,11 @@ function init() {
     // Reset high score achievement flags
     personalBestBeaten = false;
     globalHighScoreBeaten = false;
-    
+    beatenGlobalScores = []; // Reset beaten global scores tracking
+
     // Make sure personalBest is up to date when starting a new game
     initHighScoreComparison();
-    
+
     // Get values from sliders if game was started from menu
     if (gameState === "menu") {
         gravity = parseFloat(document.getElementById("gravity-slider").value);
@@ -508,7 +542,7 @@ function updateScoreDisplay() {
     scoreElement.textContent = `Score: ${currentScore}`;
 }
 /**
- * Show achievement notification
+ * Show achievement notification with type-specific durations
  */
 function showAchievement(message, type) {
     // Check if notification element already exists
@@ -531,13 +565,16 @@ function showAchievement(message, type) {
     // Animate it
     notification.classList.add('show-achievement');
     
+    // Use shorter duration for rank achievements
+    const displayDuration = type === 'rank' ? 1500 : 3000;
+    
     // Hide after duration
     setTimeout(() => {
         notification.classList.remove('show-achievement');
         setTimeout(() => {
             notification.style.display = 'none';
         }, 500);
-    }, 3000);
+    }, displayDuration);
 }
 
 /**
@@ -630,7 +667,7 @@ function update(deltaFactor) {
     // Update score based on time rather than frames
     score += deltaFactor * 0.6;
     updateScoreDisplay();
-
+    checkGlobalRankAchievements(currentScore);// Check for global rank achievements
     // Increase difficulty gradually
     if (Math.floor(score) % difficultyIncreaseInterval === 0 && 
         Math.floor(score) > 0 && 
