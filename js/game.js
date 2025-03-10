@@ -264,6 +264,8 @@ function init() {
     obstacles = [];
     obstacleTimer = 0;
     particles = [];
+    lastSubmittedScore = 0; // Reset the last submitted score
+
     
     // Get values from sliders if game was started from menu
     if (gameState === "menu") {
@@ -536,10 +538,21 @@ function checkCollisions() {
         gameOver();
     }
 }
-/**
- * Update the high score input screen to highlight potential global high scores
- */
 function showHighScoreInput() {
+    // Clear the name input field
+    document.getElementById('name-input').value = '';
+    
+    // Clear any previous status message
+    let statusMsg = document.getElementById('submit-status-message');
+    if (statusMsg) {
+        statusMsg.textContent = '';
+        statusMsg.className = 'status-message';
+    }
+    
+    // Re-enable the submit button if it was disabled
+    document.getElementById('submit-score-btn').disabled = false;
+    
+    // Set the score value
     document.getElementById('high-score-value').textContent = `Your score: ${Math.floor(score)}`;
     
     // Check if this might be a global high score
@@ -1024,12 +1037,13 @@ function isGlobalHighScore(playerScore) {
 }
 
 /**
- * Enhanced submit high score function with better error handling and debugging
+ * Update the submitHighScore function to fix state management
  */
 function submitHighScore() {
     const nameInput = document.getElementById('name-input');
     const playerName = nameInput.value.trim();
     const submitBtn = document.getElementById('submit-score-btn');
+    const currentScore = Math.floor(score); // Store the current score for comparison
     
     // Add a status message element if it doesn't exist
     let statusMsg = document.getElementById('submit-status-message');
@@ -1056,7 +1070,7 @@ function submitHighScore() {
     // Debugging: Log the data being sent
     console.log('Submitting score:', {
         name: playerName,
-        score: Math.floor(score)
+        score: currentScore
     });
     
     fetch(`${CONFIG.apiBaseUrl}/submit_score.php`, {
@@ -1066,7 +1080,7 @@ function submitHighScore() {
         },
         body: JSON.stringify({
             name: playerName,
-            score: Math.floor(score)
+            score: currentScore
         })
     })
     .then(response => {
@@ -1083,8 +1097,8 @@ function submitHighScore() {
         console.log('Server response data:', data);
         
         if (data.success) {
-            // Record that we've submitted this score
-            lastSubmittedScore = score;
+            // Record that we've submitted this specific score
+            lastSubmittedScore = currentScore;
             
             // Show success message briefly
             statusMsg.textContent = 'Score submitted successfully!';
@@ -1095,7 +1109,7 @@ function submitHighScore() {
                 document.getElementById('high-score-input').style.display = 'none';
                 
                 // Show game over screen
-                finalScoreDisplay.textContent = `Your score: ${Math.floor(score)}`;
+                finalScoreDisplay.textContent = `Your score: ${currentScore}`;
                 document.getElementById("high-score-display").textContent = `High score: ${highScore}`;
                 gameOverScreen.style.display = 'flex';
                 
