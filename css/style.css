@@ -1099,3 +1099,55 @@ button:hover {
         align-items: center;
     }
 }
+
+#start-btn {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    background-color: #4CAF50;
+    padding: 10px 24px;
+    min-width: 220px;
+    border-radius: 8px;
+    box-shadow: 0 4px 0 #2E7D32, 0 0 10px rgba(76, 175, 80, 0.5);
+    transition: all 0.2s;
+    line-height: 1.2;
+  }
+  
+  #start-btn .main-text {
+    font-size: 20px;
+    font-weight: bold;
+  }
+  
+  #start-btn .sub-text {
+    font-size: 12px;
+    opacity: 0.8;
+    margin-top: 3px;
+  }
+  
+  #start-btn:hover {
+    background-color: #45a049;
+    transform: translateY(2px);
+    box-shadow: 0 2px 0 #2E7D32, 0 0 15px rgba(76, 175, 80, 0.7);
+  }
+  
+  #start-btn:active {
+    transform: translateY(4px);
+    box-shadow: none;
+  }
+  
+  /* For smaller screens, adjust padding */
+  @media (max-height: 600px) {
+    #start-btn {
+      padding: 8px 16px;
+    }
+    
+    #start-btn .main-text {
+      font-size: 16px;
+    }
+    
+    #start-btn .sub-text {
+      font-size: 10px;
+      margin-top: 2px;
+    }
+  }
