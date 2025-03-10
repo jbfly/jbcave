@@ -130,4 +130,4 @@ Make sure your server has the same configuration as your local environment.
 ## Credits
 
 - Original concept inspired by SFCave
-- Developed by John Bonewitz
+- Developed by John BonewitzLast updated: Sun Mar  9 17:01:20 HST 2025
