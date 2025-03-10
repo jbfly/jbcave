@@ -22,22 +22,32 @@
         </div>
         <div id="start-menu" class="overlay">
             <h1 class="menu-title">JBCave</h1>
-            <p class="high-score main-menu-item" id="menu-high-score">High Score: 0</p>
-            <p class="controls-info main-menu-item">
-                Use SPACE, UP arrow, or tap to fly up.<br>
-                Release to fall down.<br>
-                Avoid the cave walls and obstacles!
-            </p>
             
-            <!-- Leaderboard Section with Tabs -->
-            <div id="leaderboard-container" class="main-menu-item">
-                <h3>Leaderboard</h3>
-                <div class="leaderboard-tabs">
-                    <button id="personal-tab" class="tab-button active">My Scores</button>
-                    <button id="global-tab" class="tab-button">Global Scores</button>
+            <div class="menu-column left-column">
+                <p class="high-score main-menu-item" id="menu-high-score">High Score: 0</p>
+                <p class="controls-info main-menu-item">
+                    Use SPACE, UP arrow, or tap to fly up.<br>
+                    Release to fall down.<br>
+                    Avoid the cave walls and obstacles!
+                </p>
+                
+                <div class="button-container main-menu-item">
+                    <button id="start-btn">Start Game</button>
+                    <button id="settings-btn" class="secondary-btn">Game Settings</button>
                 </div>
-                <div id="personal-leaderboard" class="leaderboard-content"></div>
-                <div id="global-leaderboard" class="leaderboard-content" style="display:none;"></div>
+            </div>
+            
+            <div class="menu-column right-column">
+                <!-- Leaderboard Section with Tabs -->
+                <div id="leaderboard-container" class="main-menu-item">
+                    <h3>Leaderboard</h3>
+                    <div class="leaderboard-tabs">
+                        <button id="personal-tab" class="tab-button active">My Scores</button>
+                        <button id="global-tab" class="tab-button">Global Scores</button>
+                    </div>
+                    <div id="personal-leaderboard" class="leaderboard-content"></div>
+                    <div id="global-leaderboard" class="leaderboard-content" style="display:none;"></div>
+                </div>
             </div>
             
             <div class="settings-container" id="settings-panel">
@@ -70,11 +80,6 @@
                 
                 <!-- Settings back button -->
                 <button id="settings-back-btn" class="secondary-btn">Back to Menu</button>
-            </div>
-            
-            <div class="button-container main-menu-item">
-                <button id="start-btn">Start Game</button>
-                <button id="settings-btn" class="secondary-btn">Game Settings</button>
             </div>
         </div>
         

@@ -493,3 +493,84 @@ button:hover {
     color: #6666ff;
     border: 1px solid #6666ff;
 }
+
+/**
+ * Update the CSS for better mobile landscape support
+ * Add these to your style.css file
+ */
+
+/* Landscape mode specific styles */
+@media (max-width: 900px) and (orientation: landscape) {
+    /* Improve menu layout for landscape */
+    #start-menu {
+        flex-direction: row;
+        flex-wrap: wrap;
+        justify-content: space-around;
+        align-content: flex-start;
+        overflow-y: auto;
+    }
+    
+    /* Title takes full width */
+    .menu-title {
+        width: 100%;
+        font-size: 28px;
+        margin: 5px 0;
+        text-align: center;
+    }
+    
+    /* Make columns of content */
+    .menu-column {
+        width: 48%;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+    }
+    
+    /* High score and controls info */
+    .high-score,
+    .controls-info {
+        font-size: 12px;
+        margin: 5px 0;
+        text-align: center;
+    }
+    
+    /* Make leaderboard more compact */
+    #leaderboard-container {
+        max-height: 160px;
+        overflow-y: auto;
+        margin: 5px 0;
+        padding: 2px;
+    }
+    
+    /* Make buttons smaller but still tappable */
+    button {
+        padding: 8px 12px;
+        margin: 5px 0;
+        font-size: 14px;
+        min-width: 120px;
+    }
+    
+    #start-btn {
+        font-size: 16px;
+        padding: 10px 16px;
+        position: fixed;
+        bottom: 10px;
+        right: 10px;
+        z-index: 100;
+    }
+    
+    .leaderboard-tabs {
+        margin: 5px 0;
+    }
+    
+    .tab-button {
+        padding: 4px 8px;
+        font-size: 12px;
+    }
+    
+    .leaderboard-table th, 
+    .leaderboard-table td {
+        padding: 4px;
+        font-size: 12px;
+    }
+}

@@ -35,11 +35,32 @@ let lastTime = 0;
 let deltaTime = 0;
 const TIME_STEP = 1000 / CONFIG.targetFPS;
 
-// Resize canvas to fit container
+/**
+ * Enhanced resize handling to ensure proper game dimensions on orientation change
+ */
 function resizeCanvas() {
     const container = document.getElementById('game-container');
     canvas.width = container.clientWidth;
     canvas.height = container.clientHeight;
+    
+    // Recalculate player position and trail
+    if (player) {
+        // Keep player at a relative position when screen size changes
+        player.x = Math.min(150, canvas.width * 0.2);
+        
+        // Adjust trail length based on new width
+        player.trailLength = Math.max(50, Math.ceil(canvas.width / 6));
+        
+        // Clear trail positions if game is not in progress
+        if (gameState !== "playing") {
+            player.trailPositions = [];
+        }
+    }
+    
+    // Redraw if not in active gameplay
+    if (gameState !== "playing") {
+        draw();
+    }
 }
 
 // Call resize on load and window resize
@@ -278,8 +299,31 @@ function init() {
     // Center player vertically
     player.y = canvas.height / 2;
     player.velocity = 0;
+    
+    // Position player x-coordinate relative to screen width
+    player.x = Math.min(150, canvas.width * 0.2);
+    
+    // Clear and initialize the trail to extend across the screen
     player.trailPositions = [];
     
+    // Calculate trail length based on screen width
+    player.trailLength = Math.max(50, Math.ceil(canvas.width / 6));
+    
+    // Pre-populate trail to extend to left edge
+    const trailStartX = -50; // Start trail beyond the left edge
+    const trailEndX = player.x;
+    const trailDistance = trailEndX - trailStartX;
+    const numPoints = 20; // Number of initial trail points
+    
+    // Generate initial trail points from left edge to player position
+    for (let i = 0; i < numPoints; i++) {
+        const x = trailStartX + (trailDistance * i / (numPoints - 1));
+        player.trailPositions.push({
+            x: x,
+            y: player.y
+        });
+    }
+
     // Generate initial cave
     initializeCave();
     
@@ -421,20 +465,27 @@ function update(deltaFactor) {
     
     // Update player position
     player.y += player.velocity * deltaFactor;
-    
+
     // Add current position to trail
     player.trailPositions.unshift({x: player.x, y: player.y});
-    
+
     // Update all previous trail positions by moving them left with game speed
     for (let i = 1; i < player.trailPositions.length; i++) {
         player.trailPositions[i].x -= gameSpeed * deltaFactor;
     }
-    
-    // Limit trail length
-    if (player.trailPositions.length > player.trailLength || 
-        (player.trailPositions.length > 0 && 
-        player.trailPositions[player.trailPositions.length-1].x < -50)) {
-        player.trailPositions.pop();
+
+    // Maintain dynamic trail length based on screen size
+    const minTrailLength = Math.ceil(canvas.width / 6);
+    player.trailLength = Math.max(50, minTrailLength);
+
+    // Only limit trail length if it's gotten too long
+    // Make sure the trail extends beyond the left edge of the screen
+    if (player.trailPositions.length > player.trailLength) {
+        const lastPos = player.trailPositions[player.trailPositions.length-1];
+        // Only remove if it's well off-screen
+        if (lastPos.x < -50) {
+            player.trailPositions.pop();
+        }
     }
     
     // Move cave sections
@@ -729,7 +780,7 @@ function drawObstacles() {
 }
 
 /**
- * Draw player's trail as a flowing ribbon
+ * Update the drawPlayerTrail function to ensure complete rendering
  */
 function drawPlayerTrail() {
     if (player.trailPositions.length < 2) return;
@@ -738,6 +789,17 @@ function drawPlayerTrail() {
     ctx.lineWidth = player.height;
     ctx.lineCap = 'round';
     ctx.lineJoin = 'round';
+    
+    // Add smooth alpha gradient for trail
+    const gradient = ctx.createLinearGradient(
+        player.trailPositions[player.trailPositions.length-1].x, 0,
+        player.trailPositions[0].x, 0
+    );
+    gradient.addColorStop(0, 'rgba(51, 153, 204, 0.3)'); // Fade at the end
+    gradient.addColorStop(0.5, 'rgba(51, 153, 204, 0.7)');
+    gradient.addColorStop(1, 'rgba(51, 153, 204, 1)'); // Full opacity at player
+    
+    ctx.strokeStyle = gradient;
     
     ctx.beginPath();
     ctx.moveTo(player.trailPositions[0].x, player.trailPositions[0].y);
@@ -1273,6 +1335,20 @@ function setupEventListeners() {
         } else if (gameState === "menu") {
             init();
         }
+    });
+
+    window.addEventListener('orientationchange', function() {
+        // Small delay to let the browser update dimensions
+        setTimeout(function() {
+            resizeCanvas();
+            
+            // Force redraw of menu
+            if (gameState === "menu") {
+                // Refresh the display of scores to fit new dimensions
+                displayPersonalScores();
+                displayGlobalHighScores();
+            }
+        }, 200);
     });
     
     canvas.addEventListener('touchend', (e) => {
