@@ -1024,19 +1024,40 @@ function isGlobalHighScore(playerScore) {
 }
 
 /**
- * Submit a high score to the server
+ * Enhanced submit high score function with better error handling and debugging
  */
 function submitHighScore() {
     const nameInput = document.getElementById('name-input');
     const playerName = nameInput.value.trim();
+    const submitBtn = document.getElementById('submit-score-btn');
+    
+    // Add a status message element if it doesn't exist
+    let statusMsg = document.getElementById('submit-status-message');
+    if (!statusMsg) {
+        statusMsg = document.createElement('div');
+        statusMsg.id = 'submit-status-message';
+        statusMsg.className = 'status-message';
+        document.getElementById('name-input-container').appendChild(statusMsg);
+    }
     
     if (!playerName) {
-        alert('Please enter your name!');
+        statusMsg.textContent = 'Please enter your name!';
+        statusMsg.className = 'status-message error';
         return;
     }
     
+    // Show submitting status
+    statusMsg.textContent = 'Submitting score...';
+    statusMsg.className = 'status-message info';
+    
     // Disable the submit button to prevent double submission
-    document.getElementById('submit-score-btn').disabled = true;
+    submitBtn.disabled = true;
+    
+    // Debugging: Log the data being sent
+    console.log('Submitting score:', {
+        name: playerName,
+        score: Math.floor(score)
+    });
     
     fetch(`${CONFIG.apiBaseUrl}/submit_score.php`, {
         method: 'POST',
@@ -1049,36 +1070,53 @@ function submitHighScore() {
         })
     })
     .then(response => {
+        // Log the raw response for debugging
+        console.log('Server response status:', response.status);
+        
         if (!response.ok) {
-            throw new Error('Network response was not ok');
+            throw new Error(`Server returned ${response.status}: ${response.statusText}`);
         }
         return response.json();
     })
     .then(data => {
+        // Log the parsed response data
+        console.log('Server response data:', data);
+        
         if (data.success) {
             // Record that we've submitted this score
             lastSubmittedScore = score;
             
-            // Hide high score input
-            document.getElementById('high-score-input').style.display = 'none';
+            // Show success message briefly
+            statusMsg.textContent = 'Score submitted successfully!';
+            statusMsg.className = 'status-message success';
             
-            // Show game over screen
-            finalScoreDisplay.textContent = `Your score: ${Math.floor(score)}`;
-            document.getElementById("high-score-display").textContent = `High score: ${highScore}`;
-            gameOverScreen.style.display = 'flex';
-            
-            // Refresh high scores in the background
-            fetchHighScores();
+            // Hide high score input after a short delay
+            setTimeout(() => {
+                document.getElementById('high-score-input').style.display = 'none';
+                
+                // Show game over screen
+                finalScoreDisplay.textContent = `Your score: ${Math.floor(score)}`;
+                document.getElementById("high-score-display").textContent = `High score: ${highScore}`;
+                gameOverScreen.style.display = 'flex';
+                
+                // Refresh high scores to include the new submission
+                setTimeout(() => {
+                    fetchHighScores();
+                }, 500);
+            }, 1000);
         } else {
             throw new Error(data.message || 'Score submission failed');
         }
     })
     .catch(error => {
         console.error('Error submitting score:', error);
-        alert('Could not submit your score. Please try again.');
+        
+        // Show error message to user
+        statusMsg.textContent = 'Error submitting score. Please try again.';
+        statusMsg.className = 'status-message error';
         
         // Re-enable the submit button
-        document.getElementById('submit-score-btn').disabled = false;
+        submitBtn.disabled = false;
     });
 }
 

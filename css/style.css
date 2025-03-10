@@ -465,3 +465,31 @@ button:hover {
 .extra-scores tr:first-child td {
     border-top: 2px dashed #444;
 }
+
+/* Status message styling */
+.status-message {
+    margin: 10px 0;
+    padding: 8px;
+    border-radius: 4px;
+    font-size: 14px;
+    text-align: center;
+    transition: all 0.3s ease;
+}
+
+.status-message.error {
+    background-color: rgba(255, 0, 0, 0.2);
+    color: #ff6666;
+    border: 1px solid #ff6666;
+}
+
+.status-message.success {
+    background-color: rgba(0, 255, 0, 0.1);
+    color: #66ff66;
+    border: 1px solid #66ff66;
+}
+
+.status-message.info {
+    background-color: rgba(0, 0, 255, 0.1);
+    color: #6666ff;
+    border: 1px solid #6666ff;
+}
