@@ -309,6 +309,9 @@ function init() {
     personalBestBeaten = false;
     globalHighScoreBeaten = false;
     
+    // Make sure personalBest is up to date when starting a new game
+    initHighScoreComparison();
+    
     // Get values from sliders if game was started from menu
     if (gameState === "menu") {
         gravity = parseFloat(document.getElementById("gravity-slider").value);
@@ -627,7 +630,7 @@ function update(deltaFactor) {
     // Update score based on time rather than frames
     score += deltaFactor * 0.6;
     updateScoreDisplay();
-        
+
     // Increase difficulty gradually
     if (Math.floor(score) % difficultyIncreaseInterval === 0 && 
         Math.floor(score) > 0 && 
@@ -1596,6 +1599,9 @@ function initApp() {
     } catch (e) {
         console.log('Could not load high score');
     }
+    
+    // Initialize high score comparison variables
+    initHighScoreComparison();
     
     // Update high score displays
     document.getElementById('menu-high-score').textContent = `High Score: ${highScore}`;
