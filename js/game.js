@@ -493,7 +493,7 @@ function gameOver() {
     if (score > 100 && score !== lastSubmittedScore && CONFIG.useServerFeatures) {
         // Show high score input after a short delay to see explosion
         setTimeout(() => {
-            document.getElementById('high-score-value').textContent = `Your score: ${score}`;
+            document.getElementById('high-score-value').textContent = `Your score: ${Math.floor(score)}`;
             document.getElementById('high-score-input').style.display = 'flex';
             document.getElementById('name-input').style.display = 'none';
             document.getElementById('activate-input-btn').style.display = 'block';
@@ -502,7 +502,7 @@ function gameOver() {
     }
     
     // Show game over screen
-    finalScoreDisplay.textContent = `Your score: ${score}`;
+    finalScoreDisplay.textContent = `Your score: ${Math.floor(score)}`;
     document.getElementById("high-score-display").textContent = `High score: ${highScore}`;
     gameOverScreen.style.display = 'flex';
     
@@ -765,7 +765,7 @@ function submitHighScore() {
         },
         body: JSON.stringify({
             name: playerName,
-            score: score
+            score: Math.floor(score)
         })
     })
     .then(response => {
@@ -895,7 +895,7 @@ function setupHighScoreEventListeners() {
         document.getElementById('high-score-input').style.display = 'none';
         
         // Show game over screen
-        finalScoreDisplay.textContent = `Your score: ${score}`;
+        finalScoreDisplay.textContent = `Your score: ${Math.floor(score)}`;
         document.getElementById("high-score-display").textContent = `High score: ${highScore}`;
         gameOverScreen.style.display = 'flex';
     });
