@@ -100,6 +100,74 @@ const caveParams = {
     caveMinWidth: 3000
 };
 
+/**
+ * Format a date string to a human-readable format
+ * @param {string} dateString - ISO date string from database
+ * @returns {string} Formatted date
+ */
+function formatDate(dateString) {
+    const date = new Date(dateString);
+    
+    // Format: "Mar 9, 2025"
+    const options = { 
+        month: 'short', 
+        day: 'numeric', 
+        year: 'numeric' 
+    };
+    
+    return date.toLocaleDateString(undefined, options);
+}
+
+/**
+ * Calculate and format time elapsed since date
+ * @param {string} dateString - ISO date string from database
+ * @returns {string} Human-readable time elapsed (e.g., "5m ago", "2d ago")
+ */
+function timeAgo(dateString) {
+    const date = new Date(dateString);
+    const now = new Date();
+    const seconds = Math.floor((now - date) / 1000);
+    
+    // Less than a minute
+    if (seconds < 60) {
+        return "just now";
+    }
+    
+    // Less than an hour
+    const minutes = Math.floor(seconds / 60);
+    if (minutes < 60) {
+        return `${minutes}m ago`;
+    }
+    
+    // Less than a day
+    const hours = Math.floor(minutes / 60);
+    if (hours < 24) {
+        return `${hours}h ago`;
+    }
+    
+    // Less than a week
+    const days = Math.floor(hours / 24);
+    if (days < 7) {
+        return `${days}d ago`;
+    }
+    
+    // Less than a month
+    if (days < 30) {
+        const weeks = Math.floor(days / 7);
+        return `${weeks}w ago`;
+    }
+    
+    // Less than a year
+    const months = Math.floor(days / 30);
+    if (months < 12) {
+        return `${months}mo ago`;
+    }
+    
+    // More than a year
+    const years = Math.floor(days / 365);
+    return `${years}y ago`;
+}
+
 // Event for handling input state
 function handleInput(isPressed) {
     isThrusting = isPressed;
@@ -516,12 +584,32 @@ function gameOver() {
     // Save personal scores to localStorage
     try {
         let personalScores = JSON.parse(localStorage.getItem('jbcave-scores') || '[]');
-        personalScores.push(Math.floor(score)); // Ensure it's an integer
-        personalScores.sort((a, b) => b - a); // Sort in descending order
-        if (personalScores.length > 10) personalScores = personalScores.slice(0, 10); // Keep top 10
+        let personalDates = JSON.parse(localStorage.getItem('jbcave-score-dates') || '[]');
+        
+        // Add current score
+        personalScores.push(Math.floor(score));
+        
+        // Add current date
+        const now = new Date().toISOString();
+        personalDates.push(now);
+        
+        // Sort scores and maintain date alignment
+        // Create array of [score, date] pairs, sort, then separate
+        const combined = personalScores.map((score, i) => [score, personalDates[i] || null]);
+        combined.sort((a, b) => b[0] - a[0]); // Sort by score descending
+        
+        // Keep only top 10
+        const top10 = combined.slice(0, 10);
+        
+        // Split back into separate arrays
+        personalScores = top10.map(item => item[0]);
+        personalDates = top10.map(item => item[1]);
+        
+        // Save back to localStorage
         localStorage.setItem('jbcave-scores', JSON.stringify(personalScores));
+        localStorage.setItem('jbcave-score-dates', JSON.stringify(personalDates));
     } catch (e) {
-        console.log('Could not save personal scores');
+        console.log('Could not save personal scores', e);
     }
     
     // Always prompt for name to submit score if over 100
@@ -643,11 +731,12 @@ function drawPlayerTrail() {
 // ------------------------------
 
 /**
- * Display personal scores from localStorage
+ * Display personal scores from localStorage with dates
  */
 function displayPersonalScores() {
     try {
         const personalScores = JSON.parse(localStorage.getItem('jbcave-scores') || '[]');
+        const personalDates = JSON.parse(localStorage.getItem('jbcave-score-dates') || '[]');
         const leaderboardEl = document.getElementById('personal-leaderboard');
         
         if (personalScores.length === 0) {
@@ -661,16 +750,29 @@ function displayPersonalScores() {
                     <tr>
                         <th>#</th>
                         <th>Score</th>
+                        <th>When</th>
                     </tr>
                 </thead>
                 <tbody>
         `;
         
-        personalScores.slice(0, 5).forEach((score, index) => {
+        // Combine scores with dates if available
+        const scoresWithDates = personalScores.slice(0, 5).map((score, index) => {
+            return {
+                score: score,
+                date: personalDates[index] || null
+            };
+        });
+        
+        scoresWithDates.forEach((item, index) => {
+            const timeAgoText = item.date ? timeAgo(item.date) : "";
+            const dateTooltip = item.date ? formatDate(item.date) : "";
+            
             tableHtml += `
                 <tr>
                     <td>${index + 1}</td>
-                    <td>${score}</td>
+                    <td>${item.score}</td>
+                    <td class="score-date" title="${dateTooltip}">${timeAgoText}</td>
                 </tr>
             `;
         });
@@ -687,7 +789,7 @@ function displayPersonalScores() {
 }
 
 /**
- * Display global high scores
+ * Display global high scores with date information
  */
 function displayGlobalHighScores() {
     const leaderboardEl = document.getElementById('global-leaderboard');
@@ -704,17 +806,22 @@ function displayGlobalHighScores() {
                     <th>Rank</th>
                     <th>Name</th>
                     <th>Score</th>
+                    <th>When</th>
                 </tr>
             </thead>
             <tbody>
     `;
     
     globalHighScores.slice(0, 5).forEach((scoreData, index) => {
+        const timeAgoText = scoreData.date_added ? timeAgo(scoreData.date_added) : "";
+        const dateTooltip = scoreData.date_added ? formatDate(scoreData.date_added) : "";
+        
         tableHtml += `
             <tr>
                 <td>${index + 1}</td>
                 <td>${scoreData.player_name}</td>
                 <td>${scoreData.score}</td>
+                <td class="score-date" title="${dateTooltip}">${timeAgoText}</td>
             </tr>
         `;
     });

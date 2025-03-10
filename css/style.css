@@ -367,3 +367,59 @@ button:hover {
     50% { transform: scale(1.05); }
     100% { transform: scale(1); }
 }
+
+/* Date column styling */
+.score-date {
+    font-size: 12px;
+    color: #aaa;
+    white-space: nowrap;
+    text-align: right !important;
+}
+
+/* Add tooltip styling */
+[title] {
+    position: relative;
+    cursor: help;
+}
+
+/* Make the table responsive */
+.leaderboard-table {
+    width: 100%;
+    table-layout: fixed;
+}
+
+.leaderboard-table th:nth-child(1), 
+.leaderboard-table td:nth-child(1) {
+    width: 15%;
+}
+
+.leaderboard-table th:nth-child(2), 
+.leaderboard-table td:nth-child(2) {
+    width: 35%;
+}
+
+.leaderboard-table th:nth-child(3), 
+.leaderboard-table td:nth-child(3) {
+    width: 25%;
+}
+
+.leaderboard-table th:nth-child(4), 
+.leaderboard-table td:nth-child(4) {
+    width: 25%;
+}
+
+/* For personal scores with only 3 columns */
+#personal-leaderboard .leaderboard-table th:nth-child(1),
+#personal-leaderboard .leaderboard-table td:nth-child(1) {
+    width: 15%;
+}
+
+#personal-leaderboard .leaderboard-table th:nth-child(2),
+#personal-leaderboard .leaderboard-table td:nth-child(2) {
+    width: 50%;
+}
+
+#personal-leaderboard .leaderboard-table th:nth-child(3),
+#personal-leaderboard .leaderboard-table td:nth-child(3) {
+    width: 35%;
+}
