@@ -1768,7 +1768,7 @@ function initApp() {
     initHighScoreComparison();
     
     // Update high score displays
-    document.getElementById('menu-high-score').textContent = `High Score: ${highScore}`;
+    document.getElementById('menu-high-score').textContent = `My High Score: ${highScore}`;
     
     // Set initial game state
     gameState = "menu";
