@@ -101,21 +101,31 @@ const caveParams = {
 };
 
 /**
- * Format a date string to a human-readable format
+ * Format a date string to a human-readable format including time
  * @param {string} dateString - ISO date string from database
- * @returns {string} Formatted date
+ * @returns {string} Formatted date with time
  */
 function formatDate(dateString) {
     const date = new Date(dateString);
     
-    // Format: "Mar 9, 2025"
-    const options = { 
+    // Format date: "Mar 9, 2025"
+    const dateOptions = { 
         month: 'short', 
         day: 'numeric', 
         year: 'numeric' 
     };
     
-    return date.toLocaleDateString(undefined, options);
+    // Format time: "3:45 PM"
+    const timeOptions = {
+        hour: 'numeric',
+        minute: '2-digit',
+        hour12: true
+    };
+    
+    const formattedDate = date.toLocaleDateString(undefined, dateOptions);
+    const formattedTime = date.toLocaleTimeString(undefined, timeOptions);
+    
+    return `${formattedDate} at ${formattedTime}`;
 }
 
 /**
