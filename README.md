@@ -1,6 +1,6 @@
 # JBCave
 
-A fun HTML5 cave flyer game inspired by SFCave, with high scores and mobile support.
+A fun HTML5 cave flyer game inspired by SFCave (https://www.sunflat.net/), with high scores and mobile support.
 
 ## Play Online
 
