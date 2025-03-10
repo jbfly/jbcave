@@ -322,3 +322,48 @@ button:hover {
         margin: 5px 0;
     }
 }
+
+/* Add these styles to your style.css file */
+
+/* Special styling for global high score screens */
+#high-score-input.global-high-score h2 {
+    color: #FFD700;  /* Gold color */
+    text-shadow: 0 0 10px #FFD700, 0 0 20px #FFD700;
+    font-size: 32px;
+    animation: pulse 1.5s infinite;
+}
+
+#high-score-input.global-high-score {
+    background-color: rgba(0, 0, 0, 0.9);  /* Darker background */
+    border: 2px solid #FFD700;
+}
+
+/* Emphasize high score value */
+#high-score-input.global-high-score #high-score-value {
+    font-size: 26px;
+    color: #fff;
+    font-weight: bold;
+    margin: 15px 0;
+}
+
+/* Highlight the submit button for global high scores */
+.highlight-btn {
+    background-color: #FFD700 !important;
+    color: #000 !important;
+    font-weight: bold !important;
+    box-shadow: 0 0 10px #FFD700;
+    transform: scale(1.1);
+    animation: pulse 1.5s infinite;
+}
+
+.highlight-btn:hover {
+    background-color: #FFC107 !important;
+    transform: scale(1.15) !important;
+}
+
+/* Pulsing animation for important elements */
+@keyframes pulse {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.05); }
+    100% { transform: scale(1); }
+}

@@ -458,7 +458,40 @@ function checkCollisions() {
         gameOver();
     }
 }
-
+/**
+ * Update the high score input screen to highlight potential global high scores
+ */
+function showHighScoreInput() {
+    document.getElementById('high-score-value').textContent = `Your score: ${Math.floor(score)}`;
+    
+    // Check if this might be a global high score
+    if (CONFIG.useServerFeatures && isGlobalHighScore(score)) {
+        // Add a class to highlight the screen for important scores
+        document.getElementById('high-score-input').classList.add('global-high-score');
+        
+        // Update the heading to show it's a global high score
+        const heading = document.getElementById('high-score-input').querySelector('h2');
+        heading.textContent = "New Global High Score!";
+        
+        // Make the submit button more prominent
+        document.getElementById('submit-score-btn').classList.add('highlight-btn');
+    } else {
+        // Reset classes for normal scores
+        document.getElementById('high-score-input').classList.remove('global-high-score');
+        
+        // Reset heading
+        const heading = document.getElementById('high-score-input').querySelector('h2');
+        heading.textContent = "New High Score!";
+        
+        // Reset submit button styling
+        document.getElementById('submit-score-btn').classList.remove('highlight-btn');
+    }
+    
+    // Show the screen
+    document.getElementById('high-score-input').style.display = 'flex';
+    document.getElementById('name-input').style.display = 'none';
+    document.getElementById('activate-input-btn').style.display = 'block';
+}
 /**
  * Game over
  */
@@ -495,10 +528,7 @@ function gameOver() {
     if (score > 100 && score !== lastSubmittedScore && CONFIG.useServerFeatures) {
         // Show high score input after a short delay to see explosion
         setTimeout(() => {
-            document.getElementById('high-score-value').textContent = `Your score: ${Math.floor(score)}`;
-            document.getElementById('high-score-input').style.display = 'flex';
-            document.getElementById('name-input').style.display = 'none';
-            document.getElementById('activate-input-btn').style.display = 'block';
+            showHighScoreInput();
             // Unblock input after screen is shown
             setTimeout(() => {
                 inputBlocked = false;
@@ -755,6 +785,21 @@ function fetchHighScores() {
 }
 
 /**
+ * Check if a score is good enough for the global leaderboard
+ */
+function isGlobalHighScore(playerScore) {
+    // If there are no global scores yet, any score is worthy
+    if (globalHighScores.length === 0) return true;
+    
+    // If there are fewer than 10 scores, any score is worthy
+    if (globalHighScores.length < 10) return true;
+    
+    // Otherwise, check if the score is higher than the lowest score on the board
+    const lowestScore = Math.min(...globalHighScores.map(entry => entry.score));
+    return playerScore > lowestScore;
+}
+
+/**
  * Submit a high score to the server
  */
 function submitHighScore() {
@@ -901,8 +946,17 @@ function setupHighScoreEventListeners() {
     // Submit score button
     document.getElementById('submit-score-btn').addEventListener('click', submitHighScore);
     
-    // Skip submit button
+    // Skip submit button with confirmation for potential high scores
     document.getElementById('skip-submit-btn').addEventListener('click', () => {
+        // If server features are enabled and this is a potential high score, ask for confirmation
+        if (CONFIG.useServerFeatures && isGlobalHighScore(score)) {
+            const confirmSkip = confirm("You have a potential global high score! Are you sure you don't want to submit it?");
+            if (!confirmSkip) {
+                return; // Don't skip if they cancel
+            }
+        }
+        
+        // If confirmed or not a high score, proceed with skip
         document.getElementById('high-score-input').style.display = 'none';
         
         // Show game over screen
@@ -945,7 +999,19 @@ function setupEventListeners() {
         }
     });
     
-    // Update the mousedown event handler
+    canvas.addEventListener('touchend', (e) => {
+        e.preventDefault();
+        touchIsActive = false;
+        handleInput(false);
+    });
+    
+    canvas.addEventListener('touchcancel', (e) => {
+        e.preventDefault();
+        touchIsActive = false;
+        handleInput(false);
+    });
+    
+    // Mouse events (desktop)
     canvas.addEventListener('mousedown', () => {
         // Skip input handling if input is blocked or touch is active
         if (inputBlocked || touchIsActive) return;
@@ -960,7 +1026,15 @@ function setupEventListeners() {
         }
     });
     
-    // Update the keydown handler to respect inputBlocked
+    canvas.addEventListener('mouseup', () => {
+        if (!touchIsActive) handleInput(false);
+    });
+    
+    canvas.addEventListener('mouseleave', () => {
+        if (!touchIsActive) handleInput(false);
+    });
+    
+    // Key events
     window.addEventListener('keydown', (e) => {
         if ((e.key === ' ' || e.key === 'ArrowUp')) {
             // Prevent scrolling when using space/arrow keys
