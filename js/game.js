@@ -667,7 +667,7 @@ function update(deltaFactor) {
     // Update score based on time rather than frames
     score += deltaFactor * 0.6;
     updateScoreDisplay();
-    checkGlobalRankAchievements(currentScore);// Check for global rank achievements
+    checkGlobalRankAchievements(Math.floor(score));// Check for global rank achievements
     // Increase difficulty gradually
     if (Math.floor(score) % difficultyIncreaseInterval === 0 && 
         Math.floor(score) > 0 && 
