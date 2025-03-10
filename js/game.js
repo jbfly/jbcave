@@ -62,6 +62,7 @@ let obstacleTimer = 0;
 let highScore = 0;
 let gameState = "menu";
 let restartDelay = 0;
+let inputBlocked = false;
 
 // Particle system for explosions
 let particles = [];
@@ -464,6 +465,7 @@ function checkCollisions() {
 function gameOver() {
     isGameOver = true;
     gameState = "gameover";
+    inputBlocked = true; // Block input immediately
     score = Math.floor(score); // Round the final score down to an integer
     
     // Update high score if needed
@@ -497,6 +499,10 @@ function gameOver() {
             document.getElementById('high-score-input').style.display = 'flex';
             document.getElementById('name-input').style.display = 'none';
             document.getElementById('activate-input-btn').style.display = 'block';
+            // Unblock input after screen is shown
+            setTimeout(() => {
+                inputBlocked = false;
+            }, 300);
         }, 1000);
         return; // Don't show game over screen yet
     }
@@ -508,6 +514,11 @@ function gameOver() {
     
     // Reset restart delay
     restartDelay = 0;
+    
+    // Unblock input after a short delay to ensure the screen is visible
+    setTimeout(() => {
+        inputBlocked = false;
+    }, 300);
 }
 
 /**
@@ -918,40 +929,45 @@ function setupEventListeners() {
     // Touch events for the game (mobile)
     canvas.addEventListener('touchstart', (e) => {
         e.preventDefault(); // Prevent scrolling
+        
+        // Skip input handling if input is blocked
+        if (inputBlocked) return;
+        
         touchIsActive = true;
-        handleInput(true);
+        
+        if (gameState === "playing") {
+            handleInput(true);
+        } else if (gameState === "gameover" && restartDelay >= 30) {
+            gameOverScreen.style.display = 'none';
+            init();
+        } else if (gameState === "menu") {
+            init();
+        }
     });
     
-    canvas.addEventListener('touchend', (e) => {
-        e.preventDefault();
-        touchIsActive = false;
-        handleInput(false);
-    });
-    
-    canvas.addEventListener('touchcancel', (e) => {
-        e.preventDefault();
-        touchIsActive = false;
-        handleInput(false);
-    });
-    
-    // Mouse events (desktop)
+    // Update the mousedown event handler
     canvas.addEventListener('mousedown', () => {
-        if (!touchIsActive) handleInput(true);
+        // Skip input handling if input is blocked or touch is active
+        if (inputBlocked || touchIsActive) return;
+        
+        if (gameState === "playing") {
+            handleInput(true);
+        } else if (gameState === "gameover" && restartDelay >= 30) {
+            gameOverScreen.style.display = 'none';
+            init();
+        } else if (gameState === "menu") {
+            init();
+        }
     });
     
-    canvas.addEventListener('mouseup', () => {
-        if (!touchIsActive) handleInput(false);
-    });
-    
-    canvas.addEventListener('mouseleave', () => {
-        if (!touchIsActive) handleInput(false);
-    });
-    
-    // Key events
+    // Update the keydown handler to respect inputBlocked
     window.addEventListener('keydown', (e) => {
         if ((e.key === ' ' || e.key === 'ArrowUp')) {
             // Prevent scrolling when using space/arrow keys
             e.preventDefault();
+            
+            // Skip input handling if input is blocked
+            if (inputBlocked) return;
             
             // For gameplay
             if (gameState === "playing" && !keyIsDown) {
@@ -970,7 +986,7 @@ function setupEventListeners() {
         }
         
         // Allow Enter key to restart game
-        if (e.key === 'Enter' && gameState === "gameover") {
+        if (e.key === 'Enter' && gameState === "gameover" && !inputBlocked && restartDelay >= 30) {
             gameOverScreen.style.display = 'none';
             init();
         }
