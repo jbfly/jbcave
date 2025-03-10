@@ -743,6 +743,9 @@ function drawPlayerTrail() {
 /**
  * Display personal scores from localStorage with dates
  */
+/**
+ * Display personal scores from localStorage with expand/collapse functionality
+ */
 function displayPersonalScores() {
     try {
         const personalScores = JSON.parse(localStorage.getItem('jbcave-scores') || '[]');
@@ -754,6 +757,10 @@ function displayPersonalScores() {
             return;
         }
         
+        // Initial display count and max display count
+        const initialCount = 5;
+        const maxCount = 10; // Show up to 10 personal scores when expanded
+        
         let tableHtml = `
             <table class="leaderboard-table">
                 <thead>
@@ -763,18 +770,19 @@ function displayPersonalScores() {
                         <th>When</th>
                     </tr>
                 </thead>
-                <tbody>
+                <tbody class="initial-scores">
         `;
         
         // Combine scores with dates if available
-        const scoresWithDates = personalScores.slice(0, 5).map((score, index) => {
+        const scoresWithDates = personalScores.map((score, index) => {
             return {
                 score: score,
                 date: personalDates[index] || null
             };
         });
         
-        scoresWithDates.forEach((item, index) => {
+        // Add initial scores (always visible)
+        scoresWithDates.slice(0, initialCount).forEach((item, index) => {
             const timeAgoText = item.date ? timeAgo(item.date) : "";
             const dateTooltip = item.date ? formatDate(item.date) : "";
             
@@ -789,17 +797,54 @@ function displayPersonalScores() {
         
         tableHtml += `
                 </tbody>
+                <tbody class="extra-scores" style="display: none;">
+        `;
+        
+        // Add extra scores (initially hidden)
+        if (scoresWithDates.length > initialCount) {
+            scoresWithDates.slice(initialCount, maxCount).forEach((item, index) => {
+                const timeAgoText = item.date ? timeAgo(item.date) : "";
+                const dateTooltip = item.date ? formatDate(item.date) : "";
+                
+                tableHtml += `
+                    <tr>
+                        <td>${index + initialCount + 1}</td>
+                        <td>${item.score}</td>
+                        <td class="score-date" title="${dateTooltip}">${timeAgoText}</td>
+                    </tr>
+                `;
+            });
+        }
+        
+        tableHtml += `
+                </tbody>
             </table>
         `;
         
+        // Add toggle button if there are more scores
+        if (scoresWithDates.length > initialCount) {
+            tableHtml += `
+                <div class="toggle-scores-container">
+                    <button class="toggle-scores-btn" data-target="personal">Show More</button>
+                </div>
+            `;
+        }
+        
         leaderboardEl.innerHTML = tableHtml;
+        
+        // Add event listener to the toggle button
+        const toggleBtn = leaderboardEl.querySelector('.toggle-scores-btn');
+        if (toggleBtn) {
+            toggleBtn.addEventListener('click', toggleScores);
+        }
     } catch (e) {
         console.log('Could not display personal scores', e);
     }
 }
 
+
 /**
- * Display global high scores with date information
+ * Display global high scores with expand/collapse functionality
  */
 function displayGlobalHighScores() {
     const leaderboardEl = document.getElementById('global-leaderboard');
@@ -808,6 +853,10 @@ function displayGlobalHighScores() {
         leaderboardEl.innerHTML = '<div class="loading">No global scores yet. Be the first!</div>';
         return;
     }
+    
+    // Initial display count and max display count
+    const initialCount = 5;
+    const maxCount = 15; // Show up to 15 scores when expanded
     
     let tableHtml = `
         <table class="leaderboard-table">
@@ -819,10 +868,11 @@ function displayGlobalHighScores() {
                     <th>When</th>
                 </tr>
             </thead>
-            <tbody>
+            <tbody class="initial-scores">
     `;
     
-    globalHighScores.slice(0, 5).forEach((scoreData, index) => {
+    // Add initial scores (always visible)
+    globalHighScores.slice(0, initialCount).forEach((scoreData, index) => {
         const timeAgoText = scoreData.date_added ? timeAgo(scoreData.date_added) : "";
         const dateTooltip = scoreData.date_added ? formatDate(scoreData.date_added) : "";
         
@@ -838,10 +888,47 @@ function displayGlobalHighScores() {
     
     tableHtml += `
             </tbody>
+            <tbody class="extra-scores" style="display: none;">
+    `;
+    
+    // Add extra scores (initially hidden)
+    if (globalHighScores.length > initialCount) {
+        globalHighScores.slice(initialCount, maxCount).forEach((scoreData, index) => {
+            const timeAgoText = scoreData.date_added ? timeAgo(scoreData.date_added) : "";
+            const dateTooltip = scoreData.date_added ? formatDate(scoreData.date_added) : "";
+            
+            tableHtml += `
+                <tr>
+                    <td>${index + initialCount + 1}</td>
+                    <td>${scoreData.player_name}</td>
+                    <td>${scoreData.score}</td>
+                    <td class="score-date" title="${dateTooltip}">${timeAgoText}</td>
+                </tr>
+            `;
+        });
+    }
+    
+    tableHtml += `
+            </tbody>
         </table>
     `;
     
+    // Add toggle button if there are more scores
+    if (globalHighScores.length > initialCount) {
+        tableHtml += `
+            <div class="toggle-scores-container">
+                <button class="toggle-scores-btn" data-target="global">Show More</button>
+            </div>
+        `;
+    }
+    
     leaderboardEl.innerHTML = tableHtml;
+    
+    // Add event listener to the toggle button
+    const toggleBtn = leaderboardEl.querySelector('.toggle-scores-btn');
+    if (toggleBtn) {
+        toggleBtn.addEventListener('click', toggleScores);
+    }
 }
 
 /**
@@ -859,6 +946,26 @@ function switchLeaderboardTab(tabName) {
         content.style.display = 'none';
     });
     document.getElementById(`${tabName}-leaderboard`).style.display = 'block';
+}
+
+/**
+ * Toggle between showing more/less scores
+ */
+function toggleScores(e) {
+    const button = e.target;
+    const target = button.getAttribute('data-target');
+    const container = document.getElementById(`${target}-leaderboard`);
+    const extraScores = container.querySelector('.extra-scores');
+    
+    if (extraScores.style.display === 'none') {
+        // Show more scores
+        extraScores.style.display = 'table-row-group';
+        button.textContent = 'Show Less';
+    } else {
+        // Show fewer scores
+        extraScores.style.display = 'none';
+        button.textContent = 'Show More';
+    }
 }
 
 /**
@@ -880,7 +987,7 @@ function fetchHighScores() {
     const leaderboardEl = document.getElementById('global-leaderboard');
     leaderboardEl.innerHTML = '<div class="loading">Loading scores...</div>';
     
-    fetch(`${CONFIG.apiBaseUrl}/get_scores.php?limit=10`)
+    fetch(`${CONFIG.apiBaseUrl}/get_scores.php?limit=15`)
         .then(response => {
             if (!response.ok) {
                 throw new Error('Network response was not ok');

@@ -423,3 +423,45 @@ button:hover {
 #personal-leaderboard .leaderboard-table td:nth-child(3) {
     width: 35%;
 }
+
+/* Add these styles to your CSS file for the toggle button */
+
+.toggle-scores-container {
+    text-align: center;
+    margin: 8px 0;
+}
+
+.toggle-scores-btn {
+    background-color: #555;
+    color: #fff;
+    border: none;
+    border-radius: 3px;
+    padding: 4px 10px;
+    font-size: 12px;
+    cursor: pointer;
+    transition: background-color 0.2s;
+    min-width: 120px;
+}
+
+.toggle-scores-btn:hover {
+    background-color: #666;
+}
+
+/* Alternating row colors for better readability in longer lists */
+.leaderboard-table tbody tr:nth-child(odd) {
+    background-color: rgba(57, 153, 204, 0.05);
+}
+
+.leaderboard-table tbody tr:nth-child(even) {
+    background-color: rgba(57, 153, 204, 0.1);
+}
+
+/* Smooth transition for expanding/collapsing */
+.extra-scores {
+    transition: all 0.3s ease;
+}
+
+/* Add a subtle divider between initial and expanded scores */
+.extra-scores tr:first-child td {
+    border-top: 2px dashed #444;
+}

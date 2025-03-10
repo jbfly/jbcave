@@ -14,7 +14,7 @@ if (!isset($DB_CONFIG['enabled']) || !$DB_CONFIG['enabled']) {
 }
 
 // Number of scores to return
-$limit = isset($_GET['limit']) ? (int)$_GET['limit'] : 10;
+$limit = isset($_GET['limit']) ? (int)$_GET['limit'] : 15;
 $limit = min(100, max(1, $limit)); // Ensure limit is between 1 and 100
 
 try {
