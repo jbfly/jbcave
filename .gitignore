@@ -25,7 +25,7 @@ yarn-error.log*
 .npm
 .eslintcache
 .node_repl_history
-rate_limit.json
+rate_limits.json
 
 # Ignore backup files
 *.bak
