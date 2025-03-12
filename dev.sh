@@ -191,6 +191,94 @@ function reset_rate_limits() {
     fi
 }
 
+function upgrade_database() {
+    print_header
+    echo -e "${GREEN}Upgrading database schema...${NC}"
+    echo "This requires database admin privileges."
+    
+    # Need to run as root or user with access
+    if [ "$EUID" -ne 0 ]; then
+        echo -e "${YELLOW}This command needs database admin access.${NC}"
+        echo "Enter your sudo password if prompted:"
+        
+        # Run the command through sudo
+        sudo mysql -e "
+        USE jbcave_db;
+        
+        -- Add ip_address column if it doesn't exist
+        SET @exist := (SELECT COUNT(*) FROM information_schema.columns 
+                      WHERE table_schema = 'jbcave_db' 
+                      AND table_name = 'jbcave_highscores' 
+                      AND column_name = 'ip_address');
+        SET @query := IF(@exist <= 0, 'ALTER TABLE jbcave_highscores ADD COLUMN ip_address VARCHAR(45) DEFAULT NULL', 'SELECT \"ip_address column already exists\"');
+        PREPARE stmt FROM @query;
+        EXECUTE stmt;
+        DEALLOCATE PREPARE stmt;
+        
+        -- Add flagged column if it doesn't exist
+        SET @exist := (SELECT COUNT(*) FROM information_schema.columns 
+                      WHERE table_schema = 'jbcave_db' 
+                      AND table_name = 'jbcave_highscores' 
+                      AND column_name = 'flagged');
+        SET @query := IF(@exist <= 0, 'ALTER TABLE jbcave_highscores ADD COLUMN flagged TINYINT(1) NOT NULL DEFAULT 0', 'SELECT \"flagged column already exists\"');
+        PREPARE stmt FROM @query;
+        EXECUTE stmt;
+        DEALLOCATE PREPARE stmt;
+        
+        -- Create suspicion_details table if it doesn't exist
+        CREATE TABLE IF NOT EXISTS suspicion_details (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            score_id INT,
+            reason VARCHAR(255),
+            user_agent TEXT,
+            stats TEXT,
+            token TEXT,
+            timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (score_id) REFERENCES jbcave_highscores(id) ON DELETE CASCADE
+        );
+        "
+    else
+        # Already running as root
+        mysql -e "
+        USE jbcave_db;
+        
+        -- Add ip_address column if it doesn't exist
+        SET @exist := (SELECT COUNT(*) FROM information_schema.columns 
+                      WHERE table_schema = 'jbcave_db' 
+                      AND table_name = 'jbcave_highscores' 
+                      AND column_name = 'ip_address');
+        SET @query := IF(@exist <= 0, 'ALTER TABLE jbcave_highscores ADD COLUMN ip_address VARCHAR(45) DEFAULT NULL', 'SELECT \"ip_address column already exists\"');
+        PREPARE stmt FROM @query;
+        EXECUTE stmt;
+        DEALLOCATE PREPARE stmt;
+        
+        -- Add flagged column if it doesn't exist
+        SET @exist := (SELECT COUNT(*) FROM information_schema.columns 
+                      WHERE table_schema = 'jbcave_db' 
+                      AND table_name = 'jbcave_highscores' 
+                      AND column_name = 'flagged');
+        SET @query := IF(@exist <= 0, 'ALTER TABLE jbcave_highscores ADD COLUMN flagged TINYINT(1) NOT NULL DEFAULT 0', 'SELECT \"flagged column already exists\"');
+        PREPARE stmt FROM @query;
+        EXECUTE stmt;
+        DEALLOCATE PREPARE stmt;
+        
+        -- Create suspicion_details table if it doesn't exist
+        CREATE TABLE IF NOT EXISTS suspicion_details (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            score_id INT,
+            reason VARCHAR(255),
+            user_agent TEXT,
+            stats TEXT,
+            token TEXT,
+            timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (score_id) REFERENCES jbcave_highscores(id) ON DELETE CASCADE
+        );
+        "
+    fi
+    
+    echo -e "${GREEN}Database upgrade complete!${NC}"
+}
+
 # Check if config.php exists, create if not
 if [ ! -f "php/config.php" ]; then
     echo -e "${YELLOW}config.php not found, creating from template...${NC}"
@@ -217,7 +305,10 @@ case "$1" in
         seed_database
         ;;
     db:list)
-        list_scor
+        list_scores
+        ;;
+    db:upgrade)
+        upgrade_database
         ;;
     limits:view)
         view_rate_limits

@@ -13,13 +13,12 @@ ini_set('error_log', dirname(__FILE__) . '/score_errors.log');
 $logFile = dirname(__FILE__) . '/score_submissions.log';
 $requestData = file_get_contents('php://input');
 $clientIP = $_SERVER['REMOTE_ADDR'];
-$userAgent = $_SERVER['HTTP_USER_AGENT'] ?? 'Unknown';
 $timestamp = date('Y-m-d H:i:s');
 
 // Log raw request
 file_put_contents(
     $logFile, 
-    "[{$timestamp}] IP: {$clientIP} UA: {$userAgent} Request: {$requestData}\n", 
+    "[{$timestamp}] IP: {$clientIP} Request: {$requestData}\n", 
     FILE_APPEND
 );
 
@@ -65,15 +64,20 @@ $token = $input['token'] ?? null;
 $clientTimestamp = $input['timestamp'] ?? null;
 $stats = $input['stats'] ?? null;
 
-// Check if the score is suspicious, but don't block it
-$suspicionResults = checkSuspiciousActivity($name, $score, $token, $clientTimestamp, $stats, $clientIP, $userAgent);
-$isSuspicious = $suspicionResults['suspicious'];
-$suspicionReason = $suspicionResults['reason'];
+// Validate the submission
+$validationResult = validateSubmission($name, $score, $token, $clientTimestamp, $stats, $clientIP);
+if (!$validationResult['valid']) {
+    http_response_code(400);
+    $response = ['success' => false, 'error' => 'Validation failed', 'message' => $validationResult['message']];
+    echo json_encode($response);
+    file_put_contents($logFile, "[{$timestamp}] Validation error: {$validationResult['message']}\n", FILE_APPEND);
+    exit;
+}
 
 // Log sanitized input
 file_put_contents(
     $logFile, 
-    "[{$timestamp}] Sanitized input: name='{$name}', score={$score}, suspicious={$isSuspicious}, reason={$suspicionReason}\n", 
+    "[{$timestamp}] Sanitized input: name='{$name}', score={$score}\n", 
     FILE_APPEND
 );
 
@@ -92,35 +96,9 @@ try {
                   $DB_CONFIG['password']);
     $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
     
-    // Insert the score with ip_address and flagged status
-    $stmt = $pdo->prepare('INSERT INTO jbcave_highscores (player_name, score, ip_address, flagged) VALUES (?, ?, ?, ?)');
-    $result = $stmt->execute([$name, $score, $clientIP, $isSuspicious ? 1 : 0]);
-    
-    // If flagged, log additional details to a separate table for review
-    if ($isSuspicious) {
-        // First check if the suspicion_details table exists, create if not
-        $pdo->exec("CREATE TABLE IF NOT EXISTS suspicion_details (
-            id INT AUTO_INCREMENT PRIMARY KEY,
-            score_id INT,
-            reason VARCHAR(255),
-            user_agent TEXT,
-            stats TEXT,
-            token TEXT,
-            timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-            FOREIGN KEY (score_id) REFERENCES jbcave_highscores(id)
-        )");
-        
-        // Insert the suspicion details
-        $scoreId = $pdo->lastInsertId();
-        $detailsStmt = $pdo->prepare('INSERT INTO suspicion_details (score_id, reason, user_agent, stats, token) VALUES (?, ?, ?, ?, ?)');
-        $detailsStmt->execute([
-            $scoreId,
-            $suspicionReason,
-            $userAgent,
-            $stats ?? 'No stats provided',
-            $token ?? 'No token provided'
-        ]);
-    }
+    // Insert the score
+    $stmt = $pdo->prepare('INSERT INTO jbcave_highscores (player_name, score) VALUES (?, ?)');
+    $result = $stmt->execute([$name, $score]);
     
     // Log the result
     file_put_contents(
@@ -133,12 +111,8 @@ try {
         $newId = $pdo->lastInsertId();
         file_put_contents($logFile, "[{$timestamp}] New record ID: {$newId}\n", FILE_APPEND);
         
-        // Return success with ID and whether it was flagged
-        $response = [
-            'success' => true, 
-            'id' => $newId,
-            'message' => $isSuspicious ? 'Score submitted but flagged for review.' : 'Score submitted successfully!'
-        ];
+        // Return success with ID
+        $response = ['success' => true, 'id' => $newId];
         echo json_encode($response);
     } else {
         throw new Exception("Insert failed but did not throw exception");
@@ -169,7 +143,7 @@ try {
 }
 
 /**
- * Check for suspicious activity without blocking submissions
+ * Validate score submission to prevent cheating
  * 
  * @param string $name Player name
  * @param int $score Score value
@@ -177,59 +151,91 @@ try {
  * @param int $clientTimestamp Client timestamp (optional)
  * @param string $stats Game statistics (optional)
  * @param string $clientIP Client IP address
- * @param string $userAgent User agent string
- * @return array Suspicion result ['suspicious' => bool, 'reason' => string]
+ * @return array Validation result ['valid' => bool, 'message' => string]
  */
-function checkSuspiciousActivity($name, $score, $token, $clientTimestamp, $stats, $clientIP, $userAgent) {
-    $reasons = [];
-    
-    // 1. Check for extremely high scores
-    if ($score > 5000) {
-        $reasons[] = "Unusually high score: {$score}";
+function validateSubmission($name, $score, $token, $clientTimestamp, $stats, $clientIP) {
+    // 1. Rate limiting - prevent too many submissions from same IP
+    if (!validateRateLimit($clientIP)) {
+        return ['valid' => false, 'message' => 'Too many submissions, please wait'];
     }
     
-    // 2. Check for missing token or stats
-    if (empty($token) || empty($stats)) {
-        $reasons[] = "Missing verification data";
+    // 2. Score sanity check - extremely high scores are suspicious
+    if ($score > 10000) {
+        return ['valid' => false, 'message' => 'Score exceeds maximum allowed value'];
     }
     
-    // 3. If we have stats, check if they make sense
-    if (!empty($stats)) {
+    // 3. If we have a timestamp, check if the game duration makes sense
+    if ($clientTimestamp && $stats) {
         $parts = explode(':', $stats);
         $playTime = (int)($parts[0] ?? 0);
-        $jumps = (int)($parts[1] ?? 0);
-        $obstacles = (int)($parts[2] ?? 0);
         
-        // Calculate expected game time (score is accumulated at 0.6 points per frame at 60fps)
-        $expectedTimeMs = ($score / 0.6) * (1000 / 60);
+        // Calculate expected game time
+        $expectedTime = $score / 0.6 * (1000 / 60); // Based on score formula in game.js
         
         // If play time is too short for score, it's suspicious
-        if ($playTime < $expectedTimeMs * 0.5) {
-            $reasons[] = "Play time too short: {$playTime}ms for score {$score}";
+        if ($playTime < $expectedTime * 0.5) {
+            return ['valid' => false, 'message' => 'Play time too short for score'];
         }
         
-        // Check for unreasonable jump count
-        if ($jumps > 0 && $jumps < ($score / 100)) {
-            $reasons[] = "Too few jumps: {$jumps} for score {$score}";
+        // If play time is way too long, also suspicious
+        if ($playTime > $expectedTime * 5) {
+            return ['valid' => false, 'message' => 'Play time too long for score'];
         }
     }
     
-    // 4. Get suspicious words from a basic list (expand as needed)
-    $suspiciousWords = ['hack', 'cheat', 'test', 'admin', 'root', 'system'];
-    foreach ($suspiciousWords as $word) {
-        if (stripos($name, $word) !== false) {
-            $reasons[] = "Suspicious name: {$name}";
-            break;
+    // If all checks pass, score is considered valid
+    return ['valid' => true, 'message' => 'Score validated'];
+}
+
+/**
+ * Check if an IP has submitted too many scores recently
+ * 
+ * @param string $ip Client IP address
+ * @return bool True if within rate limits, false if exceeded
+ */
+function validateRateLimit($ip) {
+    $rateLimitFile = dirname(__FILE__) . '/rate_limits.json';
+    
+    // Load existing rate limit data
+    $rateLimits = [];
+    if (file_exists($rateLimitFile)) {
+        $rateLimits = json_decode(file_get_contents($rateLimitFile), true) ?? [];
+    }
+    
+    $now = time();
+    $ipKey = md5($ip); // Hash IP for privacy
+    
+    // Clear old entries (older than 1 hour)
+    foreach ($rateLimits as $key => $data) {
+        if ($now - $data['timestamp'] > 3600) {
+            unset($rateLimits[$key]);
         }
     }
     
-    // 5. Statistical comparison to existing scores (if we have a database connection)
-    // This would ideally compare against average scores
+    // Check if IP exists and has exceeded limit
+    if (isset($rateLimits[$ipKey])) {
+        $data = $rateLimits[$ipKey];
+        
+        // If more than 10 submissions in 10 minutes, block
+        if ($data['count'] >= 10 && $now - $data['timestamp'] < 600) {
+            return false;
+        }
+        
+        // Update count
+        $rateLimits[$ipKey] = [
+            'timestamp' => $now,
+            'count' => $data['count'] + 1
+        ];
+    } else {
+        // First submission from this IP
+        $rateLimits[$ipKey] = [
+            'timestamp' => $now,
+            'count' => 1
+        ];
+    }
     
-    // Return the result
-    $isSuspicious = count($reasons) > 0;
-    return [
-        'suspicious' => $isSuspicious,
-        'reason' => $isSuspicious ? implode("; ", $reasons) : "None"
-    ];
+    // Save updated rate limits
+    file_put_contents($rateLimitFile, json_encode($rateLimits));
+    
+    return true;
 }
