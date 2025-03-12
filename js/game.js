@@ -114,6 +114,48 @@ const PARTICLE_FRICTION = 0.98;
 let globalHighScores = [];
 let lastSubmittedScore = 0;
 
+
+/**
+ * Generate verification token for score submission
+ * This makes it harder to submit fake scores
+ */
+function generateScoreToken(playerName, score, gameStats) {
+    // Create a string with game data that's hard to fake
+    const timestamp = Date.now();
+    
+    // Game stats that would be hard to fake without actually playing
+    const statsStr = [
+        gameStats.playTime,           // How long they played (in ms)
+        gameStats.jumps,              // Number of jumps/thrusts
+        gameStats.obstacles,          // Number of obstacles passed 
+        gameStats.distanceTraveled    // Total distance traveled
+    ].join(':');
+    
+    // Create hash-like string from player data + stats
+    // This isn't cryptographically secure, but adds a layer of complexity for cheaters
+    let token = '';
+    const dataString = `${playerName}:${score}:${statsStr}:${timestamp}`;
+    
+    // Simple "hash" algorithm (not secure, but better than nothing)
+    for (let i = 0; i < dataString.length; i++) {
+        token += (dataString.charCodeAt(i) ^ (score % 255)).toString(16);
+    }
+    
+    return {
+        token: token,
+        timestamp: timestamp,
+        stats: statsStr
+    };
+}
+// Track gameplay statistics for verification
+let gameStats = {
+    playTime: 0,         // Time spent playing in ms
+    startTime: 0,        // When the game started
+    jumps: 0,            // Number of thrusts/jumps
+    obstacles: 0,        // Number of obstacles passed
+    distanceTraveled: 0  // Distance traveled
+};
+
 // Player variables
 const player = {
     x: 150,
@@ -368,7 +410,14 @@ function timeAgo(dateString) {
 }
 
 // Event for handling input state
+// Modify your input handling to track jumps
 function handleInput(isPressed) {
+    // If the player just started pressing (and wasn't before)
+    if (isPressed && !isThrusting) {
+        gameStats.jumps++;
+    }
+    
+    // Update thruster state
     isThrusting = isPressed;
 }
 
@@ -458,6 +507,18 @@ function init() {
     personalBestBeaten = false;
     globalHighScoreBeaten = false;
     beatenGlobalScores = []; // Reset beaten global scores tracking
+
+    function initStats() {
+        gameStats = {
+            playTime: 0,
+            startTime: Date.now(),
+            jumps: 0,
+            obstacles: 0,
+            distanceTraveled: 0
+        };
+    }
+    // Call initStats() at the beginning of your init() function
+    initStats();
 
     // Make sure personalBest is up to date when starting a new game
     initHighScoreComparison();
@@ -732,6 +793,24 @@ function update(deltaFactor) {
         updateParticles(deltaFactor);
         return;
     }
+
+    function updateStats(deltaFactor) {
+        // Update game statistics
+        gameStats.playTime = Date.now() - gameStats.startTime;
+        gameStats.distanceTraveled += gameSpeed * deltaFactor;
+        
+        // Check if we've passed an obstacle
+        for (let i = 0; i < obstacles.length; i++) {
+            if (player.x > obstacles[i].x + obstacles[i].width && 
+                obstacles[i].counted !== true) {
+                gameStats.obstacles++;
+                obstacles[i].counted = true;
+            }
+        }
+    }
+
+    // Call updateStats(deltaFactor) in your update() function
+    updateStats(deltaFactor);
 
     // Update player velocity based on input
     if (isThrusting) {
@@ -1426,12 +1505,13 @@ function isGlobalHighScore(playerScore) {
 /**
  * Update the submitHighScore function to fix state management
  */
+// Modify submitHighScore to include token
 function submitHighScore() {
     const nameInput = document.getElementById('name-input');
     const playerName = nameInput.value.trim();
     const submitBtn = document.getElementById('submit-score-btn');
     const currentScore = Math.floor(score); // Store the current score for comparison
-
+    
     // Add a status message element if it doesn't exist
     let statusMsg = document.getElementById('submit-status-message');
     if (!statusMsg) {
@@ -1440,85 +1520,88 @@ function submitHighScore() {
         statusMsg.className = 'status-message';
         document.getElementById('name-input-container').appendChild(statusMsg);
     }
-
+    
     if (!playerName) {
         statusMsg.textContent = 'Please enter your name!';
         statusMsg.className = 'status-message error';
         return;
     }
-
+    
     // Show submitting status
     statusMsg.textContent = 'Submitting score...';
     statusMsg.className = 'status-message info';
-
+    
     // Disable the submit button to prevent double submission
     submitBtn.disabled = true;
-
-    // Debugging: Log the data being sent
-    console.log('Submitting score:', {
+    
+    // Generate verification token
+    const verificationData = generateScoreToken(playerName, currentScore, gameStats);
+    
+    // Data to submit
+    const submitData = {
         name: playerName,
-        score: currentScore
-    });
-
+        score: currentScore,
+        token: verificationData.token,
+        timestamp: verificationData.timestamp,
+        stats: verificationData.stats
+    };
+    
     fetch(`${CONFIG.apiBaseUrl}/submit_score.php`, {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-            name: playerName,
-            score: currentScore
-        })
+        body: JSON.stringify(submitData)
     })
-        .then(response => {
-            // Log the raw response for debugging
-            console.log('Server response status:', response.status);
-
-            if (!response.ok) {
-                throw new Error(`Server returned ${response.status}: ${response.statusText}`);
-            }
-            return response.json();
-        })
-        .then(data => {
-            // Log the parsed response data
-            console.log('Server response data:', data);
-
-            if (data.success) {
-                // Record that we've submitted this specific score
-                lastSubmittedScore = currentScore;
-
-                // Show success message briefly
-                statusMsg.textContent = 'Score submitted successfully!';
-                statusMsg.className = 'status-message success';
-
-                // Hide high score input after a short delay
+    .then(response => {
+        // Log the raw response for debugging
+        console.log('Server response status:', response.status);
+        
+        if (!response.ok) {
+            throw new Error(`Server returned ${response.status}: ${response.statusText}`);
+        }
+        return response.json();
+    })
+    .then(data => {
+        // Log the parsed response data
+        console.log('Server response data:', data);
+        
+        if (data.success) {
+            // Record that we've submitted this specific score
+            lastSubmittedScore = currentScore;
+            
+            // Show success message briefly
+            statusMsg.textContent = 'Score submitted successfully!';
+            statusMsg.className = 'status-message success';
+            
+            // Hide high score input after a short delay
+            setTimeout(() => {
+                document.getElementById('high-score-input').style.display = 'none';
+                
+                // Show game over screen
+                finalScoreDisplay.textContent = `Your score: ${currentScore}`;
+                document.getElementById("high-score-display").textContent = `High score: ${highScore}`;
+                gameOverScreen.style.display = 'flex';
+                
+                // Refresh high scores to include the new submission
                 setTimeout(() => {
-                    document.getElementById('high-score-input').style.display = 'none';
-
-                    // Show game over screen
-                    finalScoreDisplay.textContent = `Your score: ${currentScore}`;
-                    document.getElementById("high-score-display").textContent = `High score: ${highScore}`;
-                    gameOverScreen.style.display = 'flex';
-
-                    // Refresh high scores to include the new submission
-                    setTimeout(() => {
-                        fetchHighScores();
-                    }, 500);
-                }, 1000);
-            } else {
-                throw new Error(data.message || 'Score submission failed');
-            }
-        })
-        .catch(error => {
-            console.error('Error submitting score:', error);
-
-            // Show error message to user
-            statusMsg.textContent = 'Error submitting score. Please try again.';
-            statusMsg.className = 'status-message error';
-
-            // Re-enable the submit button
-            submitBtn.disabled = false;
-        });
+                    fetchHighScores();
+                }, 500);
+            }, 1000);
+        } else {
+            throw new Error(data.message || 'Score submission failed');
+        }
+    })
+    .catch(error => {
+        console.error('Error submitting score:', error);
+        
+        // Show error message to user
+        statusMsg.textContent = 'Error submitting score. Please try again.';
+        statusMsg.className = 'status-message error';
+        
+        // Re-enable the submit button
+        submitBtn.disabled = false;
+    });
 }
 
 /**

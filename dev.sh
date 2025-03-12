@@ -159,6 +159,38 @@ function deploy_to_production() {
     fi
 }
 
+function view_rate_limits() {
+    print_header
+    echo -e "${GREEN}Current rate limits:${NC}"
+    
+    RATE_LIMIT_FILE="php/rate_limits.json"
+    
+    if [ -f "$RATE_LIMIT_FILE" ]; then
+        # Display rate limits file content
+        echo -e "${BLUE}Contents of $RATE_LIMIT_FILE:${NC}"
+        cat "$RATE_LIMIT_FILE" | python -m json.tool
+    else
+        echo -e "${YELLOW}Rate limits file does not exist yet${NC}"
+    fi
+}
+
+function reset_rate_limits() {
+    print_header
+    echo -e "${YELLOW}Resetting rate limits...${NC}"
+    
+    RATE_LIMIT_FILE="php/rate_limits.json"
+    
+    if [ -f "$RATE_LIMIT_FILE" ]; then
+        # Reset the file to empty JSON object
+        echo '{}' > "$RATE_LIMIT_FILE"
+        echo -e "${GREEN}Rate limits have been reset${NC}"
+    else
+        echo -e "${YELLOW}Rate limits file did not exist${NC}"
+        echo '{}' > "$RATE_LIMIT_FILE"
+        echo -e "${GREEN}Created empty rate limits file${NC}"
+    fi
+}
+
 # Check if config.php exists, create if not
 if [ ! -f "php/config.php" ]; then
     echo -e "${YELLOW}config.php not found, creating from template...${NC}"
@@ -185,7 +217,13 @@ case "$1" in
         seed_database
         ;;
     db:list)
-        list_scores
+        list_scor
+        ;;
+    limits:view)
+        view_rate_limits
+        ;;
+    limits:reset)
+        reset_rate_limits
         ;;
     deploy)
         deploy_to_production

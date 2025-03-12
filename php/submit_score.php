@@ -1,6 +1,4 @@
 <?php
-
-
 header('Content-Type: application/json');
 header('Access-Control-Allow-Origin: *');
 header('Access-Control-Allow-Methods: POST, OPTIONS');
@@ -39,7 +37,6 @@ if (!isset($DB_CONFIG['enabled']) || !$DB_CONFIG['enabled']) {
     exit;
 }
 
-
 // Validate input
 $input = json_decode(file_get_contents('php://input'), true);
 
@@ -61,6 +58,21 @@ if (!isset($input['name']) || !isset($input['score'])) {
 // Sanitize input
 $name = substr(htmlspecialchars(trim($input['name'])), 0, 20); // Limit to 20 chars
 $score = (int)$input['score'];
+
+// Get token and stats if available
+$token = $input['token'] ?? null;
+$clientTimestamp = $input['timestamp'] ?? null;
+$stats = $input['stats'] ?? null;
+
+// Validate the submission
+$validationResult = validateSubmission($name, $score, $token, $clientTimestamp, $stats, $clientIP);
+if (!$validationResult['valid']) {
+    http_response_code(400);
+    $response = ['success' => false, 'error' => 'Validation failed', 'message' => $validationResult['message']];
+    echo json_encode($response);
+    file_put_contents($logFile, "[{$timestamp}] Validation error: {$validationResult['message']}\n", FILE_APPEND);
+    exit;
+}
 
 // Log sanitized input
 file_put_contents(
@@ -128,4 +140,102 @@ try {
         "[{$timestamp}] Error: " . $e->getMessage() . "\n", 
         FILE_APPEND
     );
+}
+
+/**
+ * Validate score submission to prevent cheating
+ * 
+ * @param string $name Player name
+ * @param int $score Score value
+ * @param string $token Verification token (optional)
+ * @param int $clientTimestamp Client timestamp (optional)
+ * @param string $stats Game statistics (optional)
+ * @param string $clientIP Client IP address
+ * @return array Validation result ['valid' => bool, 'message' => string]
+ */
+function validateSubmission($name, $score, $token, $clientTimestamp, $stats, $clientIP) {
+    // 1. Rate limiting - prevent too many submissions from same IP
+    if (!validateRateLimit($clientIP)) {
+        return ['valid' => false, 'message' => 'Too many submissions, please wait'];
+    }
+    
+    // 2. Score sanity check - extremely high scores are suspicious
+    if ($score > 10000) {
+        return ['valid' => false, 'message' => 'Score exceeds maximum allowed value'];
+    }
+    
+    // 3. If we have a timestamp, check if the game duration makes sense
+    if ($clientTimestamp && $stats) {
+        $parts = explode(':', $stats);
+        $playTime = (int)($parts[0] ?? 0);
+        
+        // Calculate expected game time
+        $expectedTime = $score / 0.6 * (1000 / 60); // Based on score formula in game.js
+        
+        // If play time is too short for score, it's suspicious
+        if ($playTime < $expectedTime * 0.5) {
+            return ['valid' => false, 'message' => 'Play time too short for score'];
+        }
+        
+        // If play time is way too long, also suspicious
+        if ($playTime > $expectedTime * 5) {
+            return ['valid' => false, 'message' => 'Play time too long for score'];
+        }
+    }
+    
+    // If all checks pass, score is considered valid
+    return ['valid' => true, 'message' => 'Score validated'];
+}
+
+/**
+ * Check if an IP has submitted too many scores recently
+ * 
+ * @param string $ip Client IP address
+ * @return bool True if within rate limits, false if exceeded
+ */
+function validateRateLimit($ip) {
+    $rateLimitFile = dirname(__FILE__) . '/rate_limits.json';
+    
+    // Load existing rate limit data
+    $rateLimits = [];
+    if (file_exists($rateLimitFile)) {
+        $rateLimits = json_decode(file_get_contents($rateLimitFile), true) ?? [];
+    }
+    
+    $now = time();
+    $ipKey = md5($ip); // Hash IP for privacy
+    
+    // Clear old entries (older than 1 hour)
+    foreach ($rateLimits as $key => $data) {
+        if ($now - $data['timestamp'] > 3600) {
+            unset($rateLimits[$key]);
+        }
+    }
+    
+    // Check if IP exists and has exceeded limit
+    if (isset($rateLimits[$ipKey])) {
+        $data = $rateLimits[$ipKey];
+        
+        // If more than 10 submissions in 10 minutes, block
+        if ($data['count'] >= 10 && $now - $data['timestamp'] < 600) {
+            return false;
+        }
+        
+        // Update count
+        $rateLimits[$ipKey] = [
+            'timestamp' => $now,
+            'count' => $data['count'] + 1
+        ];
+    } else {
+        // First submission from this IP
+        $rateLimits[$ipKey] = [
+            'timestamp' => $now,
+            'count' => 1
+        ];
+    }
+    
+    // Save updated rate limits
+    file_put_contents($rateLimitFile, json_encode($rateLimits));
+    
+    return true;
 }
