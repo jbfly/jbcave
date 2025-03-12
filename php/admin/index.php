@@ -315,6 +315,12 @@ if ($is_authenticated) {
                 <div class="tab" data-tab="players">Player Analysis</div>
                 <div class="tab" data-tab="stats">Game Statistics</div>
             </div>
+
+            <div class="nav-button" style="margin-top: 20px;">
+    <a href="admin/inappropriate_names.php" class="btn" style="background-color: #e74c3c;">
+        🛡️ Username Management
+    </a>
+</div>
             
             <?php if (isset($db_error)): ?>
                 <p class="error"><?php echo $db_error; ?></p>
