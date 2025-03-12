@@ -2,9 +2,11 @@
 // Simple admin password protection
 session_start();
 
-// Super simple authentication - not secure but good enough for this demo
-// In a real application, you'd want proper authentication
-$admin_password = "jbcave123"; // Change this!
+// Load configuration file (which has the password)
+require_once('../config.php');
+
+// Super simple authentication
+$admin_password = $ADMIN_CONFIG['password'] ?? 'jbcave123'; // Fallback password if not in config
 
 // Check if already logged in
 $is_authenticated = isset($_SESSION['admin_auth']) && $_SESSION['admin_auth'] === true;
