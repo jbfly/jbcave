@@ -317,7 +317,7 @@ if ($is_authenticated) {
             </div>
 
             <div class="nav-button" style="margin-top: 20px;">
-    <a href="jbcave/php/admin/inappropriate_names.php" class="btn" style="background-color: #e74c3c;">
+    <a href="inappropriate_names.php" class="btn" style="background-color: #e74c3c;">
         🛡️ Username Management
     </a>
 </div>
