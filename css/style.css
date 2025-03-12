@@ -1400,3 +1400,45 @@ button:hover {
     font-weight: normal;
     text-shadow: none;
 }
+
+/* Warning status message */
+.status-message.warning {
+    background-color: rgba(255, 165, 0, 0.2);
+    color: #ffa500;
+    border: 1px solid #ffa500;
+}
+
+/* Flagged score in leaderboard */
+.flagged-score {
+    position: relative;
+}
+
+.flagged-score::after {
+    content: "⚠️";
+    position: absolute;
+    right: 5px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #ffa500;
+    font-size: 14px;
+}
+
+/* Hacker console animation effect */
+@keyframes typing {
+    from { width: 0 }
+    to { width: 100% }
+}
+
+@keyframes blink {
+    0%, 100% { border-color: transparent }
+    50% { border-color: #0f0 }
+}
+
+.typing-text {
+    overflow: hidden;
+    white-space: nowrap;
+    border-right: 2px solid #0f0;
+    animation: 
+        typing 3.5s steps(40, end),
+        blink 0.75s step-end infinite;
+}

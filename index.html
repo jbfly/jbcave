@@ -1,17 +1,19 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>JBCave</title>
-    
+
     <!-- Google Fonts: Press Start 2P -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
-    
+
     <link rel="stylesheet" href="css/style.css">
 </head>
+
 <body>
     <div id="game-container">
         <canvas id="gameCanvas"></canvas>
@@ -28,15 +30,15 @@
         </div>
         <div id="start-menu" class="overlay">
             <h1 class="menu-title">JBCave</h1>
-            
+
             <!-- High score in top left -->
             <div class="top-score-display">
                 <p id="menu-high-score">My High Score: 0</p>
             </div>
-            
+
             <!-- Hidden settings button (for future use) -->
             <div id="settings-btn" class="hidden-settings secondary-btn">Game Settings</div>
-            
+
             <!-- Main content area -->
             <div class="menu-content">
                 <!-- High Scores Section with Tabs -->
@@ -50,23 +52,23 @@
                     <div id="personal-leaderboard" class="leaderboard-content" style="display:none;"></div>
                 </div>
             </div>
-            
+
             <!-- Game controls -->
             <div class="game-controls">
                 <button id="start-btn">
                     <span class="main-text">Start Game</span>
                     <span class="sub-text">(press spacebar)</span>
-                  </button>                  
+                </button>
                 <button id="help-btn" class="secondary-btn">How to Play</button>
             </div>
-            
+
             <!-- Help overlay -->
             <div id="help-overlay" class="sub-overlay">
                 <div class="help-content">
                     <h3>How to Play</h3>
                     <p>Use SPACE, UP arrow, or tap to fly up.<br>
-                    Release to fall down.<br>
-                    Avoid the cave walls and obstacles!</p>
+                        Release to fall down.<br>
+                        Avoid the cave walls and obstacles!</p>
                     <button id="help-close-btn" class="secondary-btn">Close</button>
                 </div>
             </div>
@@ -81,41 +83,41 @@
                         <span class="slider-value" id="gravity-value">0.25</span>
                     </div>
                     <input type="range" id="gravity-slider" min="0.15" max="0.5" step="0.01" value="0.25">
-                    
+
                     <div class="slider-label">
                         <span>Lift Strength:</span>
                         <span class="slider-value" id="lift-value">0.45</span>
                     </div>
                     <input type="range" id="lift-slider" min="0.3" max="0.8" step="0.01" value="0.45">
-                    
+
                     <div class="slider-label">
                         <span>Max Speed:</span>
                         <span class="slider-value" id="speed-value">6.0</span>
                     </div>
                     <input type="range" id="speed-slider" min="4" max="10" step="0.5" value="6">
-                    
+
                     <div class="slider-label">
                         <span>Obstacle Frequency:</span>
                         <span class="slider-value" id="obstacle-value">150</span>
                     </div>
                     <input type="range" id="obstacle-slider" min="80" max="250" step="10" value="150">
                 </div>
-                
+
                 <!-- Settings back button -->
                 <button id="settings-back-btn" class="secondary-btn">Back to Menu</button>
             </div>
         </div>
-        
+
         <!-- High Score Input Form -->
         <div id="high-score-input" class="overlay">
             <h2>New High Score!</h2>
             <p id="high-score-value">Your score: 0</p>
-            
+
             <div id="name-input-container">
                 <button id="activate-input-btn">Tap to Enter Your Name</button>
                 <input type="text" id="name-input" maxlength="20" placeholder="Your name">
             </div>
-            
+
             <div class="button-container">
                 <button id="submit-score-btn">Submit Score</button>
                 <button id="skip-submit-btn" class="secondary-btn">Skip</button>
@@ -133,9 +135,19 @@
                 <div id="countdown">3</div>
             </div>
         </div>
+        <!-- Admin tools - internal use only -->
+        <div id="admin-panel"
+            style="display: none; position: absolute; top: 10px; right: 10px; background: rgba(0,0,0,0.8); padding: 10px; border: 1px solid #333; z-index: 1000;">
+            <h3 style="color: #f00; margin: 0 0 10px 0;">Admin Tools</h3>
+            <button id="admin-set-score" style="display: block; width: 100%; margin-bottom: 5px;">Set Score:
+                9999</button>
+            <button id="admin-clear-obstacles" style="display: block; width: 100%; margin-bottom: 5px;">Clear
+                Obstacles</button>
+        </div>
     </div>
 
     <!-- Load JavaScript -->
     <script src="js/game.js"></script>
 </body>
+
 </html>

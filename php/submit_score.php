@@ -4,11 +4,6 @@ header('Access-Control-Allow-Origin: *');
 header('Access-Control-Allow-Methods: POST, OPTIONS');
 header('Access-Control-Allow-Headers: Content-Type');
 
-// Enable error logging to a file
-ini_set('display_errors', 0);
-ini_set('log_errors', 1);
-ini_set('error_log', dirname(__FILE__) . '/score_errors.log');
-
 // Log submission attempts
 $logFile = dirname(__FILE__) . '/score_submissions.log';
 $requestData = file_get_contents('php://input');
@@ -96,32 +91,6 @@ try {
     $stmt = $pdo->prepare('INSERT INTO jbcave_highscores (player_name, score, ip_address, flagged) VALUES (?, ?, ?, ?)');
     $result = $stmt->execute([$name, $score, $clientIP, $isSuspicious ? 1 : 0]);
     
-    // If flagged, log additional details to a separate table for review
-    if ($isSuspicious) {
-        // First check if the suspicion_details table exists, create if not
-        $pdo->exec("CREATE TABLE IF NOT EXISTS suspicion_details (
-            id INT AUTO_INCREMENT PRIMARY KEY,
-            score_id INT,
-            reason VARCHAR(255),
-            user_agent TEXT,
-            stats TEXT,
-            token TEXT,
-            timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-            FOREIGN KEY (score_id) REFERENCES jbcave_highscores(id)
-        )");
-        
-        // Insert the suspicion details
-        $scoreId = $pdo->lastInsertId();
-        $detailsStmt = $pdo->prepare('INSERT INTO suspicion_details (score_id, reason, user_agent, stats, token) VALUES (?, ?, ?, ?, ?)');
-        $detailsStmt->execute([
-            $scoreId,
-            $suspicionReason,
-            $userAgent,
-            $stats ?? 'No stats provided',
-            $token ?? 'No token provided'
-        ]);
-    }
-    
     // Log the result
     file_put_contents(
         $logFile, 
@@ -133,12 +102,49 @@ try {
         $newId = $pdo->lastInsertId();
         file_put_contents($logFile, "[{$timestamp}] New record ID: {$newId}\n", FILE_APPEND);
         
-        // Return success with ID and whether it was flagged
-        $response = [
-            'success' => true, 
-            'id' => $newId,
-            'message' => $isSuspicious ? 'Score submitted but flagged for review.' : 'Score submitted successfully!'
-        ];
+        if ($isSuspicious) {
+            // Custom messages for different types of cheating
+            $hackingResponses = [
+                "n00b detected. Mr. Bonewitz has been notified.",
+                "Think you're l33t? That's cute. We've logged your IP.",
+                "Interesting approach. Your attempt has been flagged for review.",
+                "Nice try! But we've seen this trick before.",
+                "Challenge accepted. Game on, hacker!",
+                "Hmm, that's an impressive score. Almost TOO impressive...",
+                "Did you really think it would be that easy?",
+                "Plot twist: Bonewitz WANTS you to try hacking his game.",
+                "Your score seems... improbable. But we'll let the physics teacher decide.",
+                "Achievement Unlocked: Got Flagged By The System!"
+            ];
+            
+            // Randomly select a response
+            $randomResponse = $hackingResponses[array_rand($hackingResponses)];
+            
+            // Create "hacker" response with more details (educational aspect)
+            $response = [
+                'success' => true, 
+                'id' => $newId,
+                'status' => 'flagged',
+                'message' => $randomResponse,
+                
+                // Provide some details about why it was flagged (educational)
+                'debug' => [
+                    'flagReason' => $suspicionReason,
+                    'ip' => preg_replace('/(\d+)\.(\d+)\.(\d+)\.(\d+)/', '$1.$2.XX.XX', $clientIP), // Partially redacted
+                    'timestamp' => time(),
+                    'difficulty' => 'Level 1 - Basic Checks',
+                    'hint' => 'Try modifying gameStats values before they get sent. The browser console is your friend.'
+                ]
+            ];
+        } else {
+            // Normal success response
+            $response = [
+                'success' => true, 
+                'id' => $newId,
+                'message' => 'Score submitted successfully!'
+            ];
+        }
+        
         echo json_encode($response);
     } else {
         throw new Exception("Insert failed but did not throw exception");
@@ -223,8 +229,14 @@ function checkSuspiciousActivity($name, $score, $token, $clientTimestamp, $stats
         }
     }
     
-    // 5. Statistical comparison to existing scores (if we have a database connection)
-    // This would ideally compare against average scores
+    // 5. Check for offensive words (additional feature)
+    $offensiveWords = ['slur', 'offensive', 'badword']; // Add more as needed
+    foreach ($offensiveWords as $word) {
+        if (stripos($name, $word) !== false) {
+            $reasons[] = "Potentially inappropriate name";
+            break;
+        }
+    }
     
     // Return the result
     $isSuspicious = count($reasons) > 0;

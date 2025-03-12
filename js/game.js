@@ -286,6 +286,168 @@ function setupPauseControls() {
 }
 
 /**
+ * Show a "hacker console" when a score is flagged
+ * Add this function to your game.js file
+ */
+function showHackerConsole(debugInfo) {
+    // Create hacker console element if it doesn't exist
+    let hackerConsole = document.getElementById('hacker-console');
+    if (!hackerConsole) {
+        hackerConsole = document.createElement('div');
+        hackerConsole.id = 'hacker-console';
+        document.getElementById('game-container').appendChild(hackerConsole);
+        
+        // Add some CSS
+        const style = document.createElement('style');
+        style.textContent = `
+            #hacker-console {
+                position: fixed;
+                top: 50%;
+                left: 50%;
+                transform: translate(-50%, -50%);
+                background-color: #000;
+                color: #0f0;
+                font-family: monospace;
+                padding: 20px;
+                border: 2px solid #0f0;
+                z-index: 1000;
+                width: 90%;
+                max-width: 500px;
+                max-height: 80vh;
+                overflow: auto;
+                box-shadow: 0 0 20px #0f0;
+                animation: glitch 0.3s infinite;
+            }
+            #hacker-console h2 {
+                color: #f00;
+                text-align: center;
+                margin-top: 0;
+            }
+            #hacker-console p {
+                margin: 5px 0;
+                line-height: 1.4;
+            }
+            #hacker-console .key {
+                color: #f00;
+            }
+            #hacker-console .value {
+                color: #0f0;
+            }
+            #hacker-console .hint {
+                color: #ff0;
+                margin-top: 15px;
+                border-top: 1px solid #ff0;
+                padding-top: 10px;
+            }
+            #hacker-console button {
+                background: #0f0;
+                color: #000;
+                border: none;
+                padding: 8px 15px;
+                margin-top: 15px;
+                cursor: pointer;
+                font-family: monospace;
+                font-weight: bold;
+                display: block;
+                width: 100%;
+            }
+            @keyframes glitch {
+                0% { text-shadow: 1px 0 0 #f00, -1px 0 0 #0f0; }
+                50% { text-shadow: -1px 0 0 #f00, 1px 0 0 #0f0; }
+                100% { text-shadow: 1px 0 0 #f00, -1px 0 0 #0f0; }
+            }
+        `;
+        document.head.appendChild(style);
+    }
+    
+    // Format debug info
+    let consoleHTML = `
+        <h2>FLAGGED SUBMISSION DETECTED</h2>
+        <p>Your submission was flagged as suspicious. Here's why:</p>
+        <p><span class="key">Flag Reason:</span> <span class="value">${debugInfo.flagReason || 'Unknown'}</span></p>
+        <p><span class="key">IP Address:</span> <span class="value">${debugInfo.ip || 'Unknown'}</span></p>
+        <p><span class="key">Timestamp:</span> <span class="value">${new Date(debugInfo.timestamp * 1000).toLocaleString()}</span></p>
+        <p><span class="key">Security Level:</span> <span class="value">${debugInfo.difficulty || 'Basic'}</span></p>
+        <p class="hint"><span class="key">HINT:</span> <span class="value">${debugInfo.hint || 'Try harder!'}</span></p>
+        <button id="close-hacker-console">ACKNOWLEDGE</button>
+    `;
+    
+    // Set content and show
+    hackerConsole.innerHTML = consoleHTML;
+    hackerConsole.style.display = 'block';
+    
+    // Add close button listener
+    document.getElementById('close-hacker-console').addEventListener('click', () => {
+        hackerConsole.style.display = 'none';
+        
+        // Show game over screen
+        document.getElementById('high-score-input').style.display = 'none';
+        finalScoreDisplay.textContent = `Your score: ${Math.floor(score)}`;
+        document.getElementById("high-score-display").textContent = `High score: ${highScore}`;
+        gameOverScreen.style.display = 'flex';
+        
+        // Refresh scores
+        fetchHighScores();
+    });
+}
+
+/**
+ * Validates the player's score to prevent tampering
+ * This security measure ensures leaderboard integrity
+ */
+function validateScoreWithKey(score, playerName) {
+    // We use a secret key to validate scores
+    // TODO: Move this to server-side in the next update
+    const secretKey = "jbcave-verification-1337";
+    
+    // Generate validation hash from score and player name
+    const validationString = score + secretKey + playerName;
+    let hashValue = 0;
+    
+    // Standard hashing algorithm
+    for (let i = 0; i < validationString.length; i++) {
+        hashValue = ((hashValue << 5) - hashValue) + validationString.charCodeAt(i);
+        hashValue |= 0; // Convert to 32bit integer
+    }
+    
+    // Store validation in local storage for verification
+    // When submitting, we'll check if this matches server calculation
+    localStorage.setItem('scoreValidation', btoa(hashValue.toString()));
+    
+    return btoa(hashValue.toString());
+}
+// Security cookie initialization
+function initSecurityCookies() {
+    // Set cookie expiration
+    const d = new Date();
+    d.setTime(d.getTime() + (7*24*60*60*1000));
+    const expires = "expires="+ d.toUTCString();
+    
+    // Store security level
+    document.cookie = "jbcave_security=level1; " + expires + "; path=/";
+    
+    // This cookie validates the user session
+    document.cookie = "jbcave_validation=" + btoa("standard_user") + "; " + expires + "; path=/";
+}
+// Check for administrative privileges
+function checkAdminAccess() {
+    // Verify admin status  
+    if (localStorage.getItem('isAdmin') === 'true') {
+        document.getElementById('admin-panel').style.display = 'block';
+        
+        // Set up admin controls
+        document.getElementById('admin-set-score').addEventListener('click', () => {
+            score = 9999;
+            console.log("Score set to 9999");
+        });
+        
+        document.getElementById('admin-clear-obstacles').addEventListener('click', () => {
+            obstacles = [];
+            console.log("Obstacles cleared");
+        });
+    }
+}
+/**
  * Initialize high score comparison values - call this during initApp()
  */
 function initHighScoreComparison() {
@@ -331,6 +493,92 @@ function checkGlobalRankAchievements(currentScore) {
         }
     }
 }
+
+function initSecurityCheck() {
+    // Security validation - ensures client isn't modified
+    // This feature prevents cheating by validating the game state
+    fetch(`${CONFIG.apiBaseUrl}/security_check.php`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            // Format: timestamp-secretHash
+            securityToken: Date.now() + "-" + "predictablevalue",
+            clientData: {
+                isModified: false,
+                cheatDetected: false,
+                timestamp: Date.now()
+            }
+        })
+    }).catch(error => {
+        // Silently fail - we don't want to block gameplay if server is down
+        console.log("Security check complete");
+    });
+}
+
+// Hidden developer tools for game testing
+function checkDeveloperMode() {
+    console.log("Checking developer mode...");
+    console.log("URL params:", window.location.search);
+    
+    // Debug the current state
+    console.log("Current devHash:", localStorage.getItem('devHash'));
+    console.log("Expected devHash:", btoa('jbcavedev'));
+    
+    // Check URL for developer access
+    if (window.location.search.includes('dev=true')) {
+        console.log("Dev parameter detected in URL");
+        
+        if (localStorage.getItem('devHash') === btoa('jbcavedev')) {
+            console.log("%c🔓 DEVELOPER MODE ACTIVATED! 🔓", "color: lime; font-size: 20px; font-weight: bold; background: black; padding: 5px;");
+            
+            // Add a visible indicator to the game
+            const devIndicator = document.createElement('div');
+            devIndicator.id = 'dev-mode-indicator';
+            devIndicator.style.position = 'fixed';
+            devIndicator.style.top = '10px';
+            devIndicator.style.right = '10px';
+            devIndicator.style.background = 'rgba(0,255,0,0.8)';
+            devIndicator.style.color = 'black';
+            devIndicator.style.padding = '5px 10px';
+            devIndicator.style.borderRadius = '5px';
+            devIndicator.style.fontWeight = 'bold';
+            devIndicator.style.zIndex = '9999';
+            devIndicator.textContent = 'DEV MODE';
+            document.body.appendChild(devIndicator);
+            
+            // Add some developer powers
+            window.devPowers = {
+                setScore: function(value) {
+                    score = value;
+                    console.log(`Score set to ${value}`);
+                },
+                godMode: function() {
+                    console.log("God mode activated - you are invincible!");
+                    // Override the checkCollisions function to never detect collisions
+                    window.originalCheckCollisions = checkCollisions;
+                    checkCollisions = function() { return false; };
+                },
+                disableGodMode: function() {
+                    console.log("God mode deactivated");
+                    checkCollisions = window.originalCheckCollisions;
+                }
+            };
+            
+            console.log("%c🎮 Developer commands available:", "color: yellow; font-size: 14px;");
+            console.log("%c   window.devPowers.setScore(9999)", "color: white; font-size: 12px;");
+            console.log("%c   window.devPowers.godMode()", "color: white; font-size: 12px;");
+            
+            return true;
+        } else {
+            console.log("%c🔒 Developer mode requires authentication", "color: red; font-size: 14px;");
+            console.log("Hint: Try setting the correct devHash in localStorage");
+        }
+    }
+    return false;
+}
+
 /**
  * Format a date string to a human-readable format including time
  * @param {string} dateString - ISO date string from database
@@ -507,7 +755,7 @@ function init() {
     personalBestBeaten = false;
     globalHighScoreBeaten = false;
     beatenGlobalScores = []; // Reset beaten global scores tracking
-
+    
     function initStats() {
         gameStats = {
             playTime: 0,
@@ -523,6 +771,10 @@ function init() {
     // Make sure personalBest is up to date when starting a new game
     initHighScoreComparison();
 
+    // Set up security environment
+    initSecurityCookies();
+    // Initialize administrative features
+    checkAdminAccess();
     // Get values from sliders if game was started from menu
     if (gameState === "menu") {
         gravity = parseFloat(document.getElementById("gravity-slider").value);
@@ -559,6 +811,8 @@ function init() {
         });
     }
 
+    console.log("%c🔒 Anti-cheat system initialized", "color: blue; font-size: 12px;");
+    
     // Generate initial cave
     initializeCave();
 
@@ -577,6 +831,8 @@ function init() {
         window.gameLoopRunning = true;
         requestAnimationFrame(gameLoop);
     }
+    // Initialize development environment
+    checkDeveloperMode();
 }
 
 /**
@@ -817,6 +1073,11 @@ function update(deltaFactor) {
         player.velocity += lift * deltaFactor;
     } else {
         player.velocity += gravity * deltaFactor;
+    }
+
+    if (Math.random() < 0.001) { // Very rare check
+        console.log("%c🔍 Running periodic security validation...", "color: blue; font-size: 10px;");
+        initSecurityCheck();
     }
 
     // Limit max velocity
@@ -1512,6 +1773,9 @@ function submitHighScore() {
     const submitBtn = document.getElementById('submit-score-btn');
     const currentScore = Math.floor(score); // Store the current score for comparison
     
+    // Generate validation token to prevent score manipulation
+    const validationToken = validateScoreWithKey(currentScore, playerName);
+
     // Add a status message element if it doesn't exist
     let statusMsg = document.getElementById('submit-status-message');
     if (!statusMsg) {
@@ -1543,7 +1807,8 @@ function submitHighScore() {
         score: currentScore,
         token: verificationData.token,
         timestamp: verificationData.timestamp,
-        stats: verificationData.stats
+        stats: verificationData.stats,
+        validation: validationToken
     };
     
     fetch(`${CONFIG.apiBaseUrl}/submit_score.php`, {
@@ -1565,29 +1830,43 @@ function submitHighScore() {
     .then(data => {
         // Log the parsed response data
         console.log('Server response data:', data);
-        
+        /**
+        * Handle flagged scores with a special message
+        * Add this inside the submitHighScore function, in the .then() block
+        * where you handle the response data
+        */
         if (data.success) {
             // Record that we've submitted this specific score
             lastSubmittedScore = currentScore;
             
-            // Show success message briefly
-            statusMsg.textContent = 'Score submitted successfully!';
-            statusMsg.className = 'status-message success';
-            
-            // Hide high score input after a short delay
-            setTimeout(() => {
-                document.getElementById('high-score-input').style.display = 'none';
+            // Check if the score was flagged
+            if (data.status === 'flagged') {
+                // Show special message for flagged scores
+                statusMsg.textContent = data.message || 'Score flagged for review';
+                statusMsg.className = 'status-message warning';
                 
-                // Show game over screen
-                finalScoreDisplay.textContent = `Your score: ${currentScore}`;
-                document.getElementById("high-score-display").textContent = `High score: ${highScore}`;
-                gameOverScreen.style.display = 'flex';
+                // Show "hacker console" with debug info
+                showHackerConsole(data.debug);
+            } else {
+                // Normal success flow
+                statusMsg.textContent = 'Score submitted successfully!';
+                statusMsg.className = 'status-message success';
                 
-                // Refresh high scores to include the new submission
+                // Hide high score input after a short delay
                 setTimeout(() => {
-                    fetchHighScores();
-                }, 500);
-            }, 1000);
+                    document.getElementById('high-score-input').style.display = 'none';
+                    
+                    // Show game over screen
+                    finalScoreDisplay.textContent = `Your score: ${currentScore}`;
+                    document.getElementById("high-score-display").textContent = `High score: ${highScore}`;
+                    gameOverScreen.style.display = 'flex';
+                    
+                    // Refresh high scores to include the new submission
+                    setTimeout(() => {
+                        fetchHighScores();
+                    }, 500);
+                }, 1000);
+            }
         } else {
             throw new Error(data.message || 'Score submission failed');
         }
