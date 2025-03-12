@@ -4,22 +4,34 @@
  */
 
 // Game configuration
-const CONFIG = {
-    // API settings
-    apiBaseUrl: '/jbcave/php', // Path to PHP files
-    useServerFeatures: true,    // Set to false to use localStorage only
+const CONFIG = (function () {
+    // Detect if we're in local development
+    const isLocalDev = window.location.hostname === 'localhost' ||
+        window.location.hostname === '127.0.0.1';
 
-    // Game settings
-    targetFPS: 60,             // Target frames per second
-    particleCount: 50,         // Number of particles in explosion
-    particleLifespan: 60,      // Frames that particles live
-    
-    // Cave settings
-    defaultGravity: 0.25,
-    defaultLift: 0.45,
-    defaultMaxVelocity: 6,
-    defaultObstacleFrequency: 150
-};
+    return {
+        // API settings - dynamically adjust based on environment
+        apiBaseUrl: isLocalDev ? 'php' : '/jbcave/php',
+        useServerFeatures: true,    // Always enable for testing
+
+        // Game settings (unchanged)
+        targetFPS: 60,
+        particleCount: 50,
+        particleLifespan: 60,
+
+        // Game settings
+        targetFPS: 60,             // Target frames per second
+        particleCount: 50,         // Number of particles in explosion
+        particleLifespan: 60,      // Frames that particles live
+
+        // Cave settings
+        defaultGravity: 0.25,
+        defaultLift: 0.45,
+        defaultMaxVelocity: 6,
+        defaultObstacleFrequency: 150
+
+    };
+})();
 
 // Get DOM elements
 const canvas = document.getElementById('gameCanvas');
@@ -42,21 +54,21 @@ function resizeCanvas() {
     const container = document.getElementById('game-container');
     canvas.width = container.clientWidth;
     canvas.height = container.clientHeight;
-    
+
     // Recalculate player position and trail
     if (player) {
         // Keep player at a relative position when screen size changes
         player.x = Math.min(150, canvas.width * 0.2);
-        
+
         // Adjust trail length based on new width
         player.trailLength = Math.max(50, Math.ceil(canvas.width / 6));
-        
+
         // Clear trail positions if game is not in progress
         if (gameState !== "playing") {
             player.trailPositions = [];
         }
     }
-    
+
     // Redraw if not in active gameplay
     if (gameState !== "playing") {
         draw();
@@ -123,9 +135,9 @@ const caveParams = {
     sectionWidth: 50,
     roughness: 0.5,
     obstacleFrequency: CONFIG.defaultObstacleFrequency,
-    obstacleWidth: 15,      
-    obstacleHeight: 50,     
-    maxObstacles: 5,        
+    obstacleWidth: 15,
+    obstacleHeight: 50,
+    maxObstacles: 5,
     caveMinWidth: 3000
 };
 
@@ -134,7 +146,7 @@ const caveParams = {
  */
 function togglePause() {
     if (gameState !== "playing") return; // Only allow pausing during active gameplay
-    
+
     if (isPaused) {
         // Start countdown before unpausing
         startUnpauseCountdown();
@@ -149,10 +161,10 @@ function togglePause() {
  */
 function pauseGame() {
     isPaused = true;
-    
+
     // Update score display in pause menu
     document.getElementById('pause-score').textContent = `Score: ${Math.floor(score)}`;
-    
+
     // Show pause menu
     document.getElementById('pause-menu').style.display = 'flex';
 }
@@ -162,40 +174,40 @@ function pauseGame() {
  */
 function startUnpauseCountdown() {
     if (countdownActive) return; // Prevent multiple countdowns
-    
+
     countdownActive = true;
     const countdownContainer = document.getElementById('countdown-container');
     const countdownElement = document.getElementById('countdown');
-    
+
     // Hide pause menu buttons during countdown
     document.querySelectorAll('#pause-menu .button-container button').forEach(btn => {
         btn.style.display = 'none';
     });
-    
+
     // Show countdown
     countdownContainer.style.display = 'flex';
-    
+
     // Start at 3
     let count = 3;
     countdownElement.textContent = count;
-    
+
     // Update countdown every second
     const countdownInterval = setInterval(() => {
         count--;
-        
+
         if (count > 0) {
             countdownElement.textContent = count;
         } else {
             // End countdown and unpause
             clearInterval(countdownInterval);
             unpauseGame();
-            
+
             // Reset UI elements
             countdownContainer.style.display = 'none';
             document.querySelectorAll('#pause-menu .button-container button').forEach(btn => {
                 btn.style.display = 'block';
             });
-            
+
             countdownActive = false;
         }
     }, 1000);
@@ -218,7 +230,7 @@ function setupPauseControls() {
             togglePause();
         }
     });
-    
+
     // Pause menu button controls
     document.getElementById('resume-btn').addEventListener('click', togglePause);
     document.getElementById('restart-from-pause-btn').addEventListener('click', () => {
@@ -241,7 +253,7 @@ function initHighScoreComparison() {
     } catch (e) {
         personalBest = 0;
     }
-    
+
     // Default global best to 0, will be updated when we fetch scores
     globalBest = 0;
 }
@@ -251,26 +263,26 @@ function initHighScoreComparison() {
 function checkGlobalRankAchievements(currentScore) {
     // Only process if we have global scores and server features are enabled
     if (!CONFIG.useServerFeatures || globalHighScores.length === 0) return;
-    
+
     // Go through each global score from bottom to top (to get the easiest ones first)
     for (let i = globalHighScores.length - 1; i >= 0; i--) {
         const scoreEntry = globalHighScores[i];
-        
+
         // Create a unique key for this score entry
         const scoreKey = `${scoreEntry.player_name}_${scoreEntry.score}`;
-        
+
         // Skip if we've already shown notification for this entry
         if (beatenGlobalScores.includes(scoreKey)) continue;
-        
+
         // Check if player's score just surpassed this score
         if (currentScore > scoreEntry.score) {
             // Mark as beaten
             beatenGlobalScores.push(scoreKey);
-            
+
             // Show notification
             const rank = i + 1;
             showAchievement(`You Beat #${rank} - ${scoreEntry.player_name} - ${scoreEntry.score}`, 'rank');
-            
+
             // We only show one notification at a time to avoid spam
             // So we break after finding the first one
             break;
@@ -284,24 +296,24 @@ function checkGlobalRankAchievements(currentScore) {
  */
 function formatDate(dateString) {
     const date = new Date(dateString);
-    
+
     // Format date: "Mar 9, 2025"
-    const dateOptions = { 
-        month: 'short', 
-        day: 'numeric', 
-        year: 'numeric' 
+    const dateOptions = {
+        month: 'short',
+        day: 'numeric',
+        year: 'numeric'
     };
-    
+
     // Format time: "3:45 PM"
     const timeOptions = {
         hour: 'numeric',
         minute: '2-digit',
         hour12: true
     };
-    
+
     const formattedDate = date.toLocaleDateString(undefined, dateOptions);
     const formattedTime = date.toLocaleTimeString(undefined, timeOptions);
-    
+
     return `${formattedDate} at ${formattedTime}`;
 }
 
@@ -314,42 +326,42 @@ function timeAgo(dateString) {
     const date = new Date(dateString);
     const now = new Date();
     const seconds = Math.floor((now - date) / 1000);
-    
+
     // Less than a minute
     if (seconds < 60) {
         return "just now";
     }
-    
+
     // Less than an hour
     const minutes = Math.floor(seconds / 60);
     if (minutes < 60) {
         return `${minutes}m ago`;
     }
-    
+
     // Less than a day
     const hours = Math.floor(minutes / 60);
     if (hours < 24) {
         return `${hours}h ago`;
     }
-    
+
     // Less than a week
     const days = Math.floor(hours / 24);
     if (days < 7) {
         return `${days}d ago`;
     }
-    
+
     // Less than a month
     if (days < 30) {
         const weeks = Math.floor(days / 7);
         return `${weeks}w ago`;
     }
-    
+
     // Less than a year
     const months = Math.floor(days / 30);
     if (months < 12) {
         return `${months}mo ago`;
     }
-    
+
     // More than a year
     const years = Math.floor(days / 365);
     return `${years}y ago`;
@@ -369,13 +381,13 @@ let touchIsActive = false;
  */
 function createExplosion(x, y) {
     particles = [];
-    
+
     for (let i = 0; i < CONFIG.particleCount; i++) {
         const angle = Math.random() * Math.PI * 2;
         const speed = 1 + Math.random() * 5;
         const size = 2 + Math.random() * 4;
         const color = `hsl(${Math.random() * 30 + 200}, 100%, 60%)`;
-        
+
         particles.push({
             x: x,
             y: y,
@@ -395,20 +407,20 @@ function createExplosion(x, y) {
 function updateParticles(deltaFactor) {
     for (let i = particles.length - 1; i >= 0; i--) {
         const p = particles[i];
-        
+
         // Apply gravity and friction
         p.vy += PARTICLE_GRAVITY * deltaFactor;
         p.vx *= PARTICLE_FRICTION;
         p.vy *= PARTICLE_FRICTION;
-        
+
         // Update position
         p.x += p.vx * deltaFactor;
         p.y += p.vy * deltaFactor;
-        
+
         // Update life and alpha
         p.life--;
         p.alpha = p.life / CONFIG.particleLifespan;
-        
+
         // Remove dead particles
         if (p.life <= 0) {
             particles.splice(i, 1);
@@ -457,26 +469,26 @@ function init() {
         maxVelocity = parseFloat(document.getElementById("speed-slider").value);
         caveParams.obstacleFrequency = parseInt(document.getElementById("obstacle-slider").value);
     }
-    
+
     // Center player vertically
     player.y = canvas.height / 2;
     player.velocity = 0;
-    
+
     // Position player x-coordinate relative to screen width
     player.x = Math.min(150, canvas.width * 0.2);
-    
+
     // Clear and initialize the trail to extend across the screen
     player.trailPositions = [];
-    
+
     // Calculate trail length based on screen width
     player.trailLength = Math.max(50, Math.ceil(canvas.width / 6));
-    
+
     // Pre-populate trail to extend to left edge
     const trailStartX = -50; // Start trail beyond the left edge
     const trailEndX = player.x;
     const trailDistance = trailEndX - trailStartX;
     const numPoints = 20; // Number of initial trail points
-    
+
     // Generate initial trail points from left edge to player position
     for (let i = 0; i < numPoints; i++) {
         const x = trailStartX + (trailDistance * i / (numPoints - 1));
@@ -488,17 +500,17 @@ function init() {
 
     // Generate initial cave
     initializeCave();
-    
+
     // Hide menus
     document.getElementById("start-menu").style.display = "none";
     document.getElementById("game-over").style.display = "none";
     document.getElementById("high-score-input").style.display = "none";
     document.getElementById("score-display").style.display = "block";
-    
+
     // Set game state
     gameState = "playing";
     isGameOver = false;
-    
+
     // Start game loop if not already running
     if (!window.gameLoopRunning) {
         window.gameLoopRunning = true;
@@ -512,7 +524,7 @@ function init() {
 function initializeCave() {
     // Start with middle of the screen
     lastCaveY = canvas.height / 2;
-    
+
     // Create enough sections to fill the screen plus some extra
     for (let x = 0; x < canvas.width + 400; x += caveParams.sectionWidth) {
         generateNextCaveSection(x);
@@ -525,44 +537,44 @@ function initializeCave() {
 function generateNextCaveSection(x) {
     // Calculate the current gap size based on score
     let currentGap = caveParams.initialGap;
-    
+
     // Scale gap based on canvas height for mobile
     const scaleRatio = canvas.height / 500;
     currentGap = currentGap * scaleRatio;
-    
+
     // Only narrow the cave until a certain score
     if (score < caveParams.caveMinWidth) {
         currentGap = Math.max(
-            caveParams.minGap * scaleRatio, 
+            caveParams.minGap * scaleRatio,
             currentGap - (score / difficultyIncreaseInterval * caveParams.narrowingRate * 10 * scaleRatio)
         );
     }
-    
+
     // Create more pronounced meandering as the game progresses
     let meanderStrength = Math.min(40 * scaleRatio, score / 100);
-    
+
     // Create randomness based on previous position
     const randomShift = (Math.random() * 2 - 1) * caveParams.roughness * meanderStrength;
-    
+
     // Ensure the cave stays within the canvas bounds with some margin
     const margin = 50 * scaleRatio;
     const minY = margin + currentGap / 2;
     const maxY = canvas.height - margin - currentGap / 2;
-    
+
     // Calculate new Y position with constraints
     let newY = lastCaveY + randomShift;
     newY = Math.max(minY, Math.min(newY, maxY));
-    
+
     // Create the base cave section
     const section = {
         x: x,
         centerY: newY,
         gapHeight: currentGap
     };
-    
+
     // Add to cave sections
     caveSections.push(section);
-    
+
     // Update for next section
     lastCaveY = newY;
 }
@@ -572,22 +584,22 @@ function generateNextCaveSection(x) {
  */
 function createObstacle() {
     if (obstacles.length >= caveParams.maxObstacles) return;
-    
+
     // Find the last cave section
     const availableSections = caveSections.filter(s => s.x >= canvas.width);
     if (availableSections.length === 0) return;
-    
+
     // Use a section that's just off-screen
     const section = availableSections[0];
-    
+
     // Add slight random offset to obstacle position
-    const offset = (Math.random() * 0.4 - 0.2) * section.gapHeight; 
-    
+    const offset = (Math.random() * 0.4 - 0.2) * section.gapHeight;
+
     // Scale obstacle size based on canvas height
     const scaleRatio = canvas.height / 500;
     const obstacleHeight = caveParams.obstacleHeight * scaleRatio;
     const obstacleWidth = caveParams.obstacleWidth * scaleRatio;
-    
+
     // Only create obstacle if there's enough space in the cave
     if (section.gapHeight > obstacleHeight * 1.5) {
         obstacles.push({
@@ -606,42 +618,42 @@ function createObstacle() {
 function updateScoreDisplay() {
     // Get score display element
     const scoreElement = document.getElementById('score-display');
-    
+
     // Calculate current score (floored to integer)
     const currentScore = Math.floor(score);
-    
+
     // Check for high score achievements
     if (!personalBestBeaten && currentScore > personalBest) {
         // First time beating personal best
         personalBestBeaten = true;
-        
+
         // Apply personal best effect
         scoreElement.classList.add('personal-best');
-        
+
         // Create achievement notification
         showAchievement('New Personal Best!', 'personal');
-        
+
         // Remove effect after a while
         setTimeout(() => {
             scoreElement.classList.remove('personal-best');
         }, 5000);
     }
-    
+
     // Check for global high score achievement
     if (!globalHighScoreBeaten && globalBest > 0 && currentScore > globalBest) {
         // First time beating global high score
         globalHighScoreBeaten = true;
-        
+
         // Apply global best effect
         scoreElement.classList.remove('personal-best');
         scoreElement.classList.add('global-best');
-        
+
         // Create achievement notification
         showAchievement('New Global High Score!', 'global');
-        
+
         // Keep effect until end of game
     }
-    
+
     // Update the score display text
     scoreElement.textContent = `Score: ${currentScore}`;
 }
@@ -652,10 +664,10 @@ function updateScoreDisplay() {
 function isPersonalHighScore(playerScore) {
     try {
         let personalScores = JSON.parse(localStorage.getItem('jbcave-scores') || '[]');
-        
+
         // If there are fewer than 10 personal scores, any score qualifies
         if (personalScores.length < 10) return true;
-        
+
         // Otherwise, check if the score is higher than the lowest personal score
         const lowestScore = Math.min(...personalScores);
         return playerScore > lowestScore;
@@ -671,27 +683,27 @@ function isPersonalHighScore(playerScore) {
 function showAchievement(message, type) {
     // Check if notification element already exists
     let notification = document.getElementById('achievement-notification');
-    
+
     // Create if it doesn't exist
     if (!notification) {
         notification = document.createElement('div');
         notification.id = 'achievement-notification';
         document.getElementById('game-container').appendChild(notification);
     }
-    
+
     // Set content and apply appropriate class
     notification.textContent = message;
     notification.className = `achievement ${type}-achievement`;
-    
+
     // Show notification
     notification.style.display = 'block';
-    
+
     // Animate it
     notification.classList.add('show-achievement');
-    
+
     // Use shorter duration for rank achievements
     const displayDuration = type === 'rank' ? 1500 : 3000;
-    
+
     // Hide after duration
     setTimeout(() => {
         notification.classList.remove('show-achievement');
@@ -720,22 +732,22 @@ function update(deltaFactor) {
         updateParticles(deltaFactor);
         return;
     }
-    
+
     // Update player velocity based on input
     if (isThrusting) {
         player.velocity += lift * deltaFactor;
     } else {
         player.velocity += gravity * deltaFactor;
     }
-    
+
     // Limit max velocity
     player.velocity = Math.max(-maxVelocity, Math.min(player.velocity, maxVelocity));
-    
+
     // Update player position
     player.y += player.velocity * deltaFactor;
 
     // Add current position to trail
-    player.trailPositions.unshift({x: player.x, y: player.y});
+    player.trailPositions.unshift({ x: player.x, y: player.y });
 
     // Update all previous trail positions by moving them left with game speed
     for (let i = 1; i < player.trailPositions.length; i++) {
@@ -749,64 +761,64 @@ function update(deltaFactor) {
     // Only limit trail length if it's gotten too long
     // Make sure the trail extends beyond the left edge of the screen
     if (player.trailPositions.length > player.trailLength) {
-        const lastPos = player.trailPositions[player.trailPositions.length-1];
+        const lastPos = player.trailPositions[player.trailPositions.length - 1];
         // Only remove if it's well off-screen
         if (lastPos.x < -50) {
             player.trailPositions.pop();
         }
     }
-    
+
     // Move cave sections
     for (let i = 0; i < caveSections.length; i++) {
         caveSections[i].x -= gameSpeed * deltaFactor;
     }
-    
+
     // Move obstacles
     for (let i = obstacles.length - 1; i >= 0; i--) {
         obstacles[i].x -= gameSpeed * deltaFactor;
-        
+
         // Remove obstacles that are off-screen
         if (obstacles[i].x + obstacles[i].width < 0) {
             obstacles.splice(i, 1);
         }
     }
-    
+
     // Remove off-screen sections and generate new ones
     if (caveSections[0].x <= -caveParams.sectionWidth) {
         caveSections.shift();
-        
+
         // Figure out what x value to use for the new section
         const lastSectionX = caveSections[caveSections.length - 1].x;
         generateNextCaveSection(lastSectionX + caveParams.sectionWidth);
     }
-    
+
     // Handle obstacle generation timing
     obstacleTimer += deltaFactor;
     const obstacleInterval = Math.max(80, caveParams.obstacleFrequency - Math.floor(score / 1000) * 10);
-    
+
     if (obstacleTimer >= obstacleInterval && score > 300) {
         createObstacle();
         obstacleTimer = 0;
     }
-    
+
     // Check for collisions
     checkCollisions();
-    
+
     // Update score based on time rather than frames
     score += deltaFactor * 0.6;
     updateScoreDisplay();
     checkGlobalRankAchievements(Math.floor(score));// Check for global rank achievements
     // Increase difficulty gradually
-    if (Math.floor(score) % difficultyIncreaseInterval === 0 && 
-        Math.floor(score) > 0 && 
+    if (Math.floor(score) % difficultyIncreaseInterval === 0 &&
+        Math.floor(score) > 0 &&
         Math.floor(score - deltaFactor) % difficultyIncreaseInterval !== 0) {
-        
+
         // Increase speed up to a certain point
         if (gameSpeed < 7) {
             gameSpeed += 0.1;
         }
     }
-    
+
     // Update any active particles
     updateParticles(deltaFactor);
 }
@@ -819,17 +831,17 @@ function checkCollisions() {
     const playerX = player.x;
     const playerY = player.y;
     const playerRadius = player.height / 2;
-    
+
     // Find the cave sections that the player is currently passing through
     for (const section of caveSections) {
-        if (playerX + playerRadius >= section.x && 
+        if (playerX + playerRadius >= section.x &&
             playerX - playerRadius <= section.x + caveParams.sectionWidth) {
-            
+
             // Check if player hits top or bottom wall
             const topWallBottom = section.centerY - (section.gapHeight / 2);
             const bottomWallTop = section.centerY + (section.gapHeight / 2);
-            
-            if (playerY - playerRadius <= topWallBottom || 
+
+            if (playerY - playerRadius <= topWallBottom ||
                 playerY + playerRadius >= bottomWallTop) {
                 createExplosion(playerX, playerY);
                 gameOver();
@@ -837,21 +849,21 @@ function checkCollisions() {
             }
         }
     }
-    
+
     // Check for collision with obstacles
     for (const obstacle of obstacles) {
-        if (playerX + playerRadius >= obstacle.x && 
-            playerX - playerRadius <= obstacle.x + obstacle.width && 
-            playerY + playerRadius >= obstacle.y && 
+        if (playerX + playerRadius >= obstacle.x &&
+            playerX - playerRadius <= obstacle.x + obstacle.width &&
+            playerY + playerRadius >= obstacle.y &&
             playerY - playerRadius <= obstacle.y + obstacle.height) {
             createExplosion(playerX, playerY);
             gameOver();
             return;
         }
     }
-    
+
     // Check if player hits the canvas edges
-    if (playerY - playerRadius <= 0 || 
+    if (playerY - playerRadius <= 0 ||
         playerY + playerRadius >= canvas.height) {
         createExplosion(playerX, playerY);
         gameOver();
@@ -863,30 +875,30 @@ function checkCollisions() {
 function showHighScoreInput(qualifiesForGlobal, qualifiesForPersonal) {
     // Clear the name input field
     document.getElementById('name-input').value = '';
-    
+
     // Clear any previous status message
     let statusMsg = document.getElementById('submit-status-message');
     if (statusMsg) {
         statusMsg.textContent = '';
         statusMsg.className = 'status-message';
     }
-    
+
     // Re-enable the submit button if it was disabled
     document.getElementById('submit-score-btn').disabled = false;
-    
+
     // Set the score value
     document.getElementById('high-score-value').textContent = `Your score: ${Math.floor(score)}`;
-    
+
     // Handle different cases for high score messaging
     if (qualifiesForGlobal) {
         // Check if it's actually the #1 score
         const isTopScore = globalHighScores.length === 0 || score > globalHighScores[0].score;
-        
+
         if (isTopScore) {
             // Add a class to highlight the screen for the #1 score
             document.getElementById('high-score-input').classList.add('global-high-score');
             document.getElementById('high-score-input').classList.remove('leaderboard-score');
-            
+
             // Update the heading to show it's the #1 global high score
             const heading = document.getElementById('high-score-input').querySelector('h2');
             heading.textContent = "New Global High Score!";
@@ -894,12 +906,12 @@ function showHighScoreInput(qualifiesForGlobal, qualifiesForPersonal) {
             // Add a different class for leaderboard qualification
             document.getElementById('high-score-input').classList.add('leaderboard-score');
             document.getElementById('high-score-input').classList.remove('global-high-score');
-            
+
             // Update the heading for leaderboard qualification
             const heading = document.getElementById('high-score-input').querySelector('h2');
             heading.textContent = "Leaderboard Worthy Score!";
         }
-        
+
         // Make the submit button more prominent in both cases
         document.getElementById('submit-score-btn').classList.add('highlight-btn');
     } else if (qualifiesForPersonal) {
@@ -907,11 +919,11 @@ function showHighScoreInput(qualifiesForGlobal, qualifiesForPersonal) {
         document.getElementById('high-score-input').classList.remove('global-high-score');
         document.getElementById('high-score-input').classList.remove('leaderboard-score');
         document.getElementById('high-score-input').classList.add('personal-best-score');
-        
+
         // Update heading
         const heading = document.getElementById('high-score-input').querySelector('h2');
         heading.textContent = "Personal Best Score!";
-        
+
         // Normal submit button
         document.getElementById('submit-score-btn').classList.remove('highlight-btn');
     } else {
@@ -919,13 +931,13 @@ function showHighScoreInput(qualifiesForGlobal, qualifiesForPersonal) {
         document.getElementById('high-score-input').classList.remove('global-high-score');
         document.getElementById('high-score-input').classList.remove('leaderboard-score');
         document.getElementById('high-score-input').classList.remove('personal-best-score');
-    
+
         const heading = document.getElementById('high-score-input').querySelector('h2');
         heading.textContent = "New Score";
-    
+
         document.getElementById('submit-score-btn').classList.remove('highlight-btn');
     }
-    
+
     // Show the screen
     document.getElementById('high-score-input').style.display = 'flex';
     document.getElementById('name-input').style.display = 'none';
@@ -939,7 +951,7 @@ function gameOver() {
     gameState = "gameover";
     inputBlocked = true; // Block input immediately
     score = Math.floor(score); // Round the final score down to an integer
-    
+
     // Update high score if needed
     if (score > highScore) {
         highScore = score;
@@ -951,42 +963,42 @@ function gameOver() {
             console.log('Could not save high score');
         }
     }
-    
+
     // Save personal scores to localStorage
     try {
         let personalScores = JSON.parse(localStorage.getItem('jbcave-scores') || '[]');
         let personalDates = JSON.parse(localStorage.getItem('jbcave-score-dates') || '[]');
-        
+
         // Add current score
         personalScores.push(Math.floor(score));
-        
+
         // Add current date
         const now = new Date().toISOString();
         personalDates.push(now);
-        
+
         // Sort scores and maintain date alignment
         // Create array of [score, date] pairs, sort, then separate
         const combined = personalScores.map((score, i) => [score, personalDates[i] || null]);
         combined.sort((a, b) => b[0] - a[0]); // Sort by score descending
-        
+
         // Keep only top 10
         const top10 = combined.slice(0, 10);
-        
+
         // Split back into separate arrays
         personalScores = top10.map(item => item[0]);
         personalDates = top10.map(item => item[1]);
-        
+
         // Save back to localStorage
         localStorage.setItem('jbcave-scores', JSON.stringify(personalScores));
         localStorage.setItem('jbcave-score-dates', JSON.stringify(personalDates));
     } catch (e) {
         console.log('Could not save personal scores', e);
     }
-    
+
     // Check if score is high enough to prompt for name entry
     const qualifiesForGlobal = CONFIG.useServerFeatures && isGlobalHighScore(score);
     const qualifiesForPersonal = isPersonalHighScore(score);
-    
+
     // Only show high score input if the score qualifies for either leaderboard
     // and is over 100 and hasn't been submitted yet
     if (score > 100 && score !== lastSubmittedScore && (qualifiesForGlobal || qualifiesForPersonal)) {
@@ -1000,15 +1012,15 @@ function gameOver() {
         }, 1000);
         return; // Don't show game over screen yet
     }
-    
+
     // Show game over screen
     finalScoreDisplay.textContent = `Your score: ${Math.floor(score)}`;
     document.getElementById("high-score-display").textContent = `High score: ${highScore}`;
     gameOverScreen.style.display = 'flex';
-    
+
     // Reset restart delay
     restartDelay = 0;
-    
+
     // Unblock input after a short delay to ensure the screen is visible
     setTimeout(() => {
         inputBlocked = false;
@@ -1021,18 +1033,18 @@ function gameOver() {
 function draw() {
     // Clear canvas
     ctx.clearRect(0, 0, canvas.width, canvas.height);
-    
+
     // Only draw the game itself if not in menu state
     if (gameState !== "menu") {
         // Draw cave
         drawCave();
-        
+
         // Draw obstacles
         drawObstacles();
-        
+
         // Draw player trail (which is now the only visual for the player)
         drawPlayerTrail();
-        
+
         // Draw particles
         drawParticles();
     }
@@ -1045,22 +1057,22 @@ function drawCave() {
     // Draw upper and lower walls with meandering path as score increases
     for (const section of caveSections) {
         if (section.x > canvas.width) continue;
-        
+
         ctx.fillStyle = '#282';
-        
+
         // Top wall
         ctx.fillRect(
-            section.x, 
-            0, 
-            caveParams.sectionWidth, 
+            section.x,
+            0,
+            caveParams.sectionWidth,
             section.centerY - (section.gapHeight / 2)
         );
-        
+
         // Bottom wall
         ctx.fillRect(
-            section.x, 
-            section.centerY + (section.gapHeight / 2), 
-            caveParams.sectionWidth, 
+            section.x,
+            section.centerY + (section.gapHeight / 2),
+            caveParams.sectionWidth,
             canvas.height - (section.centerY + (section.gapHeight / 2))
         );
     }
@@ -1075,7 +1087,7 @@ function drawObstacles() {
         ctx.fillStyle = '#f44';
         ctx.strokeStyle = '#fff';
         ctx.lineWidth = 2;
-        
+
         ctx.fillRect(obstacle.x, obstacle.y, obstacle.width, obstacle.height);
         ctx.strokeRect(obstacle.x, obstacle.y, obstacle.width, obstacle.height);
     }
@@ -1086,30 +1098,30 @@ function drawObstacles() {
  */
 function drawPlayerTrail() {
     if (player.trailPositions.length < 2) return;
-    
+
     ctx.strokeStyle = '#39c';
     ctx.lineWidth = player.height;
     ctx.lineCap = 'round';
     ctx.lineJoin = 'round';
-    
+
     // Add smooth alpha gradient for trail
     const gradient = ctx.createLinearGradient(
-        player.trailPositions[player.trailPositions.length-1].x, 0,
+        player.trailPositions[player.trailPositions.length - 1].x, 0,
         player.trailPositions[0].x, 0
     );
     gradient.addColorStop(0, 'rgba(51, 153, 204, 0.3)'); // Fade at the end
     gradient.addColorStop(0.5, 'rgba(51, 153, 204, 0.7)');
     gradient.addColorStop(1, 'rgba(51, 153, 204, 1)'); // Full opacity at player
-    
+
     ctx.strokeStyle = gradient;
-    
+
     ctx.beginPath();
     ctx.moveTo(player.trailPositions[0].x, player.trailPositions[0].y);
-    
+
     for (let i = 1; i < player.trailPositions.length; i++) {
         ctx.lineTo(player.trailPositions[i].x, player.trailPositions[i].y);
     }
-    
+
     ctx.stroke();
 }
 
@@ -1128,16 +1140,16 @@ function displayPersonalScores() {
         const personalScores = JSON.parse(localStorage.getItem('jbcave-scores') || '[]');
         const personalDates = JSON.parse(localStorage.getItem('jbcave-score-dates') || '[]');
         const leaderboardEl = document.getElementById('personal-leaderboard');
-        
+
         if (personalScores.length === 0) {
             leaderboardEl.innerHTML = '<div class="loading">No personal scores yet</div>';
             return;
         }
-        
+
         // Initial display count and max display count
         const initialCount = 5;
         const maxCount = 10; // Show up to 10 personal scores when expanded
-        
+
         let tableHtml = `
             <table class="leaderboard-table">
                 <thead>
@@ -1149,7 +1161,7 @@ function displayPersonalScores() {
                 </thead>
                 <tbody class="initial-scores">
         `;
-        
+
         // Combine scores with dates if available
         const scoresWithDates = personalScores.map((score, index) => {
             return {
@@ -1157,12 +1169,12 @@ function displayPersonalScores() {
                 date: personalDates[index] || null
             };
         });
-        
+
         // Add initial scores (always visible)
         scoresWithDates.slice(0, initialCount).forEach((item, index) => {
             const timeAgoText = item.date ? timeAgo(item.date) : "";
             const dateTooltip = item.date ? formatDate(item.date) : "";
-            
+
             tableHtml += `
                 <tr>
                     <td>${index + 1}</td>
@@ -1171,18 +1183,18 @@ function displayPersonalScores() {
                 </tr>
             `;
         });
-        
+
         tableHtml += `
                 </tbody>
                 <tbody class="extra-scores" style="display: none;">
         `;
-        
+
         // Add extra scores (initially hidden)
         if (scoresWithDates.length > initialCount) {
             scoresWithDates.slice(initialCount, maxCount).forEach((item, index) => {
                 const timeAgoText = item.date ? timeAgo(item.date) : "";
                 const dateTooltip = item.date ? formatDate(item.date) : "";
-                
+
                 tableHtml += `
                     <tr>
                         <td>${index + initialCount + 1}</td>
@@ -1192,12 +1204,12 @@ function displayPersonalScores() {
                 `;
             });
         }
-        
+
         tableHtml += `
                 </tbody>
             </table>
         `;
-        
+
         // Add toggle button if there are more scores
         if (scoresWithDates.length > initialCount) {
             tableHtml += `
@@ -1206,9 +1218,9 @@ function displayPersonalScores() {
                 </div>
             `;
         }
-        
+
         leaderboardEl.innerHTML = tableHtml;
-        
+
         // Add event listener to the toggle button
         const toggleBtn = leaderboardEl.querySelector('.toggle-scores-btn');
         if (toggleBtn) {
@@ -1225,16 +1237,16 @@ function displayPersonalScores() {
  */
 function displayGlobalHighScores() {
     const leaderboardEl = document.getElementById('global-leaderboard');
-    
+
     if (globalHighScores.length === 0) {
         leaderboardEl.innerHTML = '<div class="loading">No global scores yet. Be the first!</div>';
         return;
     }
-    
+
     // Initial display count and max display count
     const initialCount = 5;
     const maxCount = 15; // Show up to 15 scores when expanded
-    
+
     let tableHtml = `
         <table class="leaderboard-table">
             <thead>
@@ -1247,12 +1259,12 @@ function displayGlobalHighScores() {
             </thead>
             <tbody class="initial-scores">
     `;
-    
+
     // Add initial scores (always visible)
     globalHighScores.slice(0, initialCount).forEach((scoreData, index) => {
         const timeAgoText = scoreData.date_added ? timeAgo(scoreData.date_added) : "";
         const dateTooltip = scoreData.date_added ? formatDate(scoreData.date_added) : "";
-        
+
         tableHtml += `
             <tr>
                 <td>${index + 1}</td>
@@ -1262,18 +1274,18 @@ function displayGlobalHighScores() {
             </tr>
         `;
     });
-    
+
     tableHtml += `
             </tbody>
             <tbody class="extra-scores" style="display: none;">
     `;
-    
+
     // Add extra scores (initially hidden)
     if (globalHighScores.length > initialCount) {
         globalHighScores.slice(initialCount, maxCount).forEach((scoreData, index) => {
             const timeAgoText = scoreData.date_added ? timeAgo(scoreData.date_added) : "";
             const dateTooltip = scoreData.date_added ? formatDate(scoreData.date_added) : "";
-            
+
             tableHtml += `
                 <tr>
                     <td>${index + initialCount + 1}</td>
@@ -1284,12 +1296,12 @@ function displayGlobalHighScores() {
             `;
         });
     }
-    
+
     tableHtml += `
             </tbody>
         </table>
     `;
-    
+
     // Add toggle button if there are more scores
     if (globalHighScores.length > initialCount) {
         tableHtml += `
@@ -1298,9 +1310,9 @@ function displayGlobalHighScores() {
             </div>
         `;
     }
-    
+
     leaderboardEl.innerHTML = tableHtml;
-    
+
     // Add event listener to the toggle button
     const toggleBtn = leaderboardEl.querySelector('.toggle-scores-btn');
     if (toggleBtn) {
@@ -1317,7 +1329,7 @@ function switchLeaderboardTab(tabName) {
         btn.classList.remove('active');
     });
     document.getElementById(`${tabName}-tab`).classList.add('active');
-    
+
     // Show the selected leaderboard
     document.querySelectorAll('.leaderboard-content').forEach(content => {
         content.style.display = 'none';
@@ -1333,7 +1345,7 @@ function toggleScores(e) {
     const target = button.getAttribute('data-target');
     const container = document.getElementById(`${target}-leaderboard`);
     const extraScores = container.querySelector('.extra-scores');
-    
+
     if (extraScores.style.display === 'none') {
         // Show more scores
         extraScores.style.display = 'table-row-group';
@@ -1352,19 +1364,19 @@ function toggleScores(e) {
 function fetchHighScores() {
     // Display personal scores
     displayPersonalScores();
-    
+
     // Check if server features are disabled
     if (!CONFIG.useServerFeatures) {
         document.getElementById('global-tab').classList.add('disabled');
-        document.getElementById('global-leaderboard').innerHTML = 
+        document.getElementById('global-leaderboard').innerHTML =
             '<div class="loading">Server features disabled - using local storage only</div>';
         return;
     }
-    
+
     // Fetch global scores
     const leaderboardEl = document.getElementById('global-leaderboard');
     leaderboardEl.innerHTML = '<div class="loading">Loading scores...</div>';
-    
+
     fetch(`${CONFIG.apiBaseUrl}/get_scores.php?limit=15`)
         .then(response => {
             if (!response.ok) {
@@ -1380,7 +1392,7 @@ function fetchHighScores() {
                     globalBest = globalHighScores[0].score;
                 }
                 displayGlobalHighScores();
-                
+
                 // Show global scores by default
                 switchLeaderboardTab('global');
             } else {
@@ -1390,7 +1402,7 @@ function fetchHighScores() {
         .catch(error => {
             console.error('Error fetching high scores:', error);
             leaderboardEl.innerHTML = '<div class="loading">Could not load scores. Using local storage only.</div>';
-            
+
             // Show personal scores as fallback
             switchLeaderboardTab('personal');
         });
@@ -1402,10 +1414,10 @@ function fetchHighScores() {
 function isGlobalHighScore(playerScore) {
     // If there are no global scores yet, any score is worthy
     if (globalHighScores.length === 0) return true;
-    
+
     // If there are fewer than 10 scores, any score is worthy
     if (globalHighScores.length < 10) return true;
-    
+
     // Otherwise, check if the score is higher than the lowest score on the board
     const lowestScore = Math.min(...globalHighScores.map(entry => entry.score));
     return playerScore > lowestScore;
@@ -1419,7 +1431,7 @@ function submitHighScore() {
     const playerName = nameInput.value.trim();
     const submitBtn = document.getElementById('submit-score-btn');
     const currentScore = Math.floor(score); // Store the current score for comparison
-    
+
     // Add a status message element if it doesn't exist
     let statusMsg = document.getElementById('submit-status-message');
     if (!statusMsg) {
@@ -1428,26 +1440,26 @@ function submitHighScore() {
         statusMsg.className = 'status-message';
         document.getElementById('name-input-container').appendChild(statusMsg);
     }
-    
+
     if (!playerName) {
         statusMsg.textContent = 'Please enter your name!';
         statusMsg.className = 'status-message error';
         return;
     }
-    
+
     // Show submitting status
     statusMsg.textContent = 'Submitting score...';
     statusMsg.className = 'status-message info';
-    
+
     // Disable the submit button to prevent double submission
     submitBtn.disabled = true;
-    
+
     // Debugging: Log the data being sent
     console.log('Submitting score:', {
         name: playerName,
         score: currentScore
     });
-    
+
     fetch(`${CONFIG.apiBaseUrl}/submit_score.php`, {
         method: 'POST',
         headers: {
@@ -1458,55 +1470,55 @@ function submitHighScore() {
             score: currentScore
         })
     })
-    .then(response => {
-        // Log the raw response for debugging
-        console.log('Server response status:', response.status);
-        
-        if (!response.ok) {
-            throw new Error(`Server returned ${response.status}: ${response.statusText}`);
-        }
-        return response.json();
-    })
-    .then(data => {
-        // Log the parsed response data
-        console.log('Server response data:', data);
-        
-        if (data.success) {
-            // Record that we've submitted this specific score
-            lastSubmittedScore = currentScore;
-            
-            // Show success message briefly
-            statusMsg.textContent = 'Score submitted successfully!';
-            statusMsg.className = 'status-message success';
-            
-            // Hide high score input after a short delay
-            setTimeout(() => {
-                document.getElementById('high-score-input').style.display = 'none';
-                
-                // Show game over screen
-                finalScoreDisplay.textContent = `Your score: ${currentScore}`;
-                document.getElementById("high-score-display").textContent = `High score: ${highScore}`;
-                gameOverScreen.style.display = 'flex';
-                
-                // Refresh high scores to include the new submission
+        .then(response => {
+            // Log the raw response for debugging
+            console.log('Server response status:', response.status);
+
+            if (!response.ok) {
+                throw new Error(`Server returned ${response.status}: ${response.statusText}`);
+            }
+            return response.json();
+        })
+        .then(data => {
+            // Log the parsed response data
+            console.log('Server response data:', data);
+
+            if (data.success) {
+                // Record that we've submitted this specific score
+                lastSubmittedScore = currentScore;
+
+                // Show success message briefly
+                statusMsg.textContent = 'Score submitted successfully!';
+                statusMsg.className = 'status-message success';
+
+                // Hide high score input after a short delay
                 setTimeout(() => {
-                    fetchHighScores();
-                }, 500);
-            }, 1000);
-        } else {
-            throw new Error(data.message || 'Score submission failed');
-        }
-    })
-    .catch(error => {
-        console.error('Error submitting score:', error);
-        
-        // Show error message to user
-        statusMsg.textContent = 'Error submitting score. Please try again.';
-        statusMsg.className = 'status-message error';
-        
-        // Re-enable the submit button
-        submitBtn.disabled = false;
-    });
+                    document.getElementById('high-score-input').style.display = 'none';
+
+                    // Show game over screen
+                    finalScoreDisplay.textContent = `Your score: ${currentScore}`;
+                    document.getElementById("high-score-display").textContent = `High score: ${highScore}`;
+                    gameOverScreen.style.display = 'flex';
+
+                    // Refresh high scores to include the new submission
+                    setTimeout(() => {
+                        fetchHighScores();
+                    }, 500);
+                }, 1000);
+            } else {
+                throw new Error(data.message || 'Score submission failed');
+            }
+        })
+        .catch(error => {
+            console.error('Error submitting score:', error);
+
+            // Show error message to user
+            statusMsg.textContent = 'Error submitting score. Please try again.';
+            statusMsg.className = 'status-message error';
+
+            // Re-enable the submit button
+            submitBtn.disabled = false;
+        });
 }
 
 /**
@@ -1517,17 +1529,17 @@ function gameLoop(timestamp) {
     if (!lastTime) {
         lastTime = timestamp;
     }
-    
+
     deltaTime = timestamp - lastTime;
     lastTime = timestamp;
-    
+
     // Calculate the factor to scale movements by
     // This ensures consistent speed regardless of frame rate
     const deltaFactor = deltaTime / TIME_STEP;
-    
+
     update(deltaFactor);
     draw();
-    
+
     // Continue game loop
     requestAnimationFrame(gameLoop);
 }
@@ -1541,17 +1553,17 @@ function showMainMenu() {
     document.getElementById('score-display').style.display = 'none';
     document.getElementById('high-score-input').style.display = 'none';
     document.getElementById('menu-high-score').textContent = `High Score: ${highScore}`;
-    
+
     // Show all main menu items and hide settings
     document.querySelectorAll('.main-menu-item').forEach(item => {
         item.style.display = '';
     });
     document.getElementById('settings-panel').style.display = 'none';
     document.getElementById('settings-btn').textContent = 'Game Settings';
-    
+
     // Fetch current high scores
     fetchHighScores();
-    
+
     // Reset game elements
     caveSections = [];
     obstacles = [];
@@ -1565,7 +1577,7 @@ function showMainMenu() {
 function toggleSettings() {
     const settingsPanel = document.getElementById('settings-panel');
     const mainMenuItems = document.querySelectorAll('.main-menu-item');
-    
+
     if (settingsPanel.style.display === 'flex') {
         // Show main menu items
         mainMenuItems.forEach(item => {
@@ -1588,15 +1600,15 @@ function toggleSettings() {
  */
 function setupHighScoreEventListeners() {
     // Activate input button (to prevent keyboard from popping up automatically)
-    document.getElementById('activate-input-btn').addEventListener('click', function() {
+    document.getElementById('activate-input-btn').addEventListener('click', function () {
         this.style.display = 'none';
         document.getElementById('name-input').style.display = 'block';
         document.getElementById('name-input').focus();
     });
-    
+
     // Submit score button
     document.getElementById('submit-score-btn').addEventListener('click', submitHighScore);
-    
+
     // Skip submit button with confirmation for potential high scores
     document.getElementById('skip-submit-btn').addEventListener('click', () => {
         // If server features are enabled and this is a potential high score, ask for confirmation
@@ -1606,23 +1618,23 @@ function setupHighScoreEventListeners() {
                 return; // Don't skip if they cancel
             }
         }
-        
+
         // If confirmed or not a high score, proceed with skip
         document.getElementById('high-score-input').style.display = 'none';
-        
+
         // Show game over screen
         finalScoreDisplay.textContent = `Your score: ${Math.floor(score)}`;
         document.getElementById("high-score-display").textContent = `High score: ${highScore}`;
         gameOverScreen.style.display = 'flex';
     });
-    
+
     // Allow Enter key to submit score when input is focused
     document.getElementById('name-input').addEventListener('keypress', (e) => {
         if (e.key === 'Enter') {
             submitHighScore();
         }
     });
-    
+
     // Settings back button
     document.getElementById('settings-back-btn').addEventListener('click', toggleSettings);
 }
@@ -1634,12 +1646,12 @@ function setupEventListeners() {
     // Touch events for the game (mobile)
     canvas.addEventListener('touchstart', (e) => {
         e.preventDefault(); // Prevent scrolling
-        
+
         // Skip input handling if input is blocked
         if (inputBlocked) return;
-        
+
         touchIsActive = true;
-        
+
         if (gameState === "playing") {
             handleInput(true);
         } else if (gameState === "gameover" && restartDelay >= 30) {
@@ -1650,11 +1662,11 @@ function setupEventListeners() {
         }
     });
 
-    window.addEventListener('orientationchange', function() {
+    window.addEventListener('orientationchange', function () {
         // Small delay to let the browser update dimensions
-        setTimeout(function() {
+        setTimeout(function () {
             resizeCanvas();
-            
+
             // Force redraw of menu
             if (gameState === "menu") {
                 // Refresh the display of scores to fit new dimensions
@@ -1663,24 +1675,24 @@ function setupEventListeners() {
             }
         }, 200);
     });
-    
+
     canvas.addEventListener('touchend', (e) => {
         e.preventDefault();
         touchIsActive = false;
         handleInput(false);
     });
-    
+
     canvas.addEventListener('touchcancel', (e) => {
         e.preventDefault();
         touchIsActive = false;
         handleInput(false);
     });
-    
+
     // Mouse events (desktop)
     canvas.addEventListener('mousedown', () => {
         // Skip input handling if input is blocked or touch is active
         if (inputBlocked || touchIsActive) return;
-        
+
         if (gameState === "playing") {
             handleInput(true);
         } else if (gameState === "gameover" && restartDelay >= 30) {
@@ -1690,24 +1702,24 @@ function setupEventListeners() {
             init();
         }
     });
-    
+
     canvas.addEventListener('mouseup', () => {
         if (!touchIsActive) handleInput(false);
     });
-    
+
     canvas.addEventListener('mouseleave', () => {
         if (!touchIsActive) handleInput(false);
     });
-    
+
     // Key events
     window.addEventListener('keydown', (e) => {
         if ((e.key === ' ' || e.key === 'ArrowUp')) {
             // Prevent scrolling when using space/arrow keys
             e.preventDefault();
-            
+
             // Skip input handling if input is blocked
             if (inputBlocked) return;
-            
+
             // For gameplay
             if (gameState === "playing" && !keyIsDown) {
                 keyIsDown = true;
@@ -1723,69 +1735,69 @@ function setupEventListeners() {
                 init();
             }
         }
-        
+
         // Allow Enter key to restart game
         if (e.key === 'Enter' && gameState === "gameover" && !inputBlocked && restartDelay >= 30) {
             gameOverScreen.style.display = 'none';
             init();
         }
     });
-    
+
     window.addEventListener('keyup', (e) => {
         if (e.key === ' ' || e.key === 'ArrowUp') {
             keyIsDown = false;
             handleInput(false);
         }
     });
-    
+
     // Prevent keyboard repeat issues
     window.addEventListener('blur', () => {
         keyIsDown = false;
         handleInput(false);
     });
-    
+
     // Game over screen buttons
     document.getElementById('restart-btn').addEventListener('click', () => {
         gameOverScreen.style.display = 'none';
         init();
     });
-    
+
     document.getElementById('menu-btn').addEventListener('click', () => {
         gameOverScreen.style.display = 'none';
         showMainMenu();
     });
-    
+
     // Main menu buttons
     document.getElementById('start-btn').addEventListener('click', () => {
         init();
     });
-    
+
     document.getElementById('settings-btn').addEventListener('click', toggleSettings);
-    
+
     // Slider event listeners
     document.getElementById('gravity-slider').addEventListener('input', (e) => {
         document.getElementById('gravity-value').textContent = e.target.value;
     });
-    
+
     document.getElementById('lift-slider').addEventListener('input', (e) => {
         document.getElementById('lift-value').textContent = e.target.value;
     });
-    
+
     document.getElementById('speed-slider').addEventListener('input', (e) => {
         document.getElementById('speed-value').textContent = e.target.value;
     });
-    
+
     document.getElementById('obstacle-slider').addEventListener('input', (e) => {
         document.getElementById('obstacle-value').textContent = e.target.value;
     });
-    
+
     // Setup high score event listeners
     setupHighScoreEventListeners();
-    
+
     // Tab switching for leaderboards
     document.getElementById('personal-tab').addEventListener('click', () => switchLeaderboardTab('personal'));
     document.getElementById('global-tab').addEventListener('click', () => switchLeaderboardTab('global'));
-    
+
     // Prevent default touch behavior for the entire game container
     document.getElementById('game-container').addEventListener('touchmove', (e) => {
         e.preventDefault();
@@ -1797,7 +1809,7 @@ function setupHelpMenu() {
     document.getElementById('help-btn').addEventListener('click', () => {
         document.getElementById('help-overlay').style.display = 'flex';
     });
-    
+
     // Close help button
     document.getElementById('help-close-btn').addEventListener('click', () => {
         document.getElementById('help-overlay').style.display = 'none';
@@ -1817,25 +1829,25 @@ function initApp() {
     } catch (e) {
         console.log('Could not load high score');
     }
-    
+
     // Initialize high score comparison variables
     initHighScoreComparison();
-    
+
     // Update high score displays
     document.getElementById('menu-high-score').textContent = `My High Score: ${highScore}`;
-    
+
     // Set initial game state
     gameState = "menu";
-    
+
     // Fix for the black screen on initial load
     document.getElementById('start-menu').style.display = 'flex';
-    
+
     // Make sure score display is hidden initially
     document.getElementById('score-display').style.display = 'none';
-    
+
     // Hide settings panel initially
     document.getElementById('settings-panel').style.display = 'none';
-    
+
     // Setup all event listeners
     setupEventListeners();
     // Setup help menu
