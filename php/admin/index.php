@@ -6,7 +6,11 @@ session_start();
 require_once('../config.php');
 
 // Super simple authentication
-$admin_password = $ADMIN_CONFIG['password'] ?? 'jbcave123'; // Fallback password if not in config
+$admin_password = $ADMIN_CONFIG['password'] ?? null;
+if ($admin_password === null || $admin_password === '') {
+    http_response_code(503);
+    exit('Admin is not configured.');
+}
 
 // Check if already logged in
 $is_authenticated = isset($_SESSION['admin_auth']) && $_SESSION['admin_auth'] === true;
